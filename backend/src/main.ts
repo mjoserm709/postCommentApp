@@ -2,10 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
+  // Register global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -13,6 +16,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Register dynamic response formatting
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalInterceptors(new ResponseInterceptor());
 
   // Configuración de Swagger
   const config = new DocumentBuilder()

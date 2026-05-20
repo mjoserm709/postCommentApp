@@ -15,7 +15,7 @@ export class AuthService {
     try {
       const user = await this.usersService.findByUsername(loginDto.username);
       if (user && user.password && await bcrypt.compare(loginDto.password, user.password)) {
-        const { password, ...result } = user.toObject();
+        const { password, passwordHistory, ...result } = user.toObject();
         return result;
       }
       return null;

@@ -73,7 +73,7 @@ export class LoginComponent {
       next: () => {
         this.isLoading.set(false);
         this.toast.success('¡Bienvenido! Sesión iniciada correctamente.');
-        this.router.navigate(['/users']);
+        this.router.navigate(['/']);
       },
       error: (err) => {
         this.isLoading.set(false);

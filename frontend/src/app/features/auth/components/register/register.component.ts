@@ -95,7 +95,7 @@ import { PasswordValidatorDirective } from '../../../../shared/validators/passwo
           </div>
 
           <!-- Contraseña + Pipe de validación en tiempo real -->
-          <div class="mb-4">
+          <div class="mb-3">
             <label class="form-label">Contraseña</label>
             <input
               type="password"
@@ -134,12 +134,33 @@ import { PasswordValidatorDirective } from '../../../../shared/validators/passwo
             </div>
           </div>
 
+          <!-- Confirmar contraseña -->
+          <div class="mb-4">
+            <label class="form-label">Confirmar contraseña</label>
+            <input
+              type="password"
+              class="form-control"
+              [(ngModel)]="userData.confirmPassword"
+              name="confirmPassword"
+              required
+              #confirmPasswordCtrl="ngModel"
+              [class.is-invalid]="confirmPasswordCtrl.touched && (confirmPasswordCtrl.invalid || !passwordsMatch())"
+              [class.is-valid]="confirmPasswordCtrl.touched && confirmPasswordCtrl.valid && passwordsMatch()"
+            >
+
+            @if (confirmPasswordCtrl.touched && confirmPasswordCtrl.errors?.['required']) {
+              <div class="invalid-feedback">Confirma la contraseña.</div>
+            } @else if (confirmPasswordCtrl.touched && !passwordsMatch()) {
+              <div class="invalid-feedback">Las contraseñas no coinciden.</div>
+            }
+          </div>
+
           <!-- Botón -->
           <div class="d-grid gap-2">
             <button
               type="submit"
               class="btn btn-primary btn-lg"
-              [disabled]="isLoading() || registerForm.invalid"
+              [disabled]="isLoading() || registerForm.invalid || !passwordsMatch()"
             >
               @if (isLoading()) {
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -166,6 +187,7 @@ export class RegisterComponent {
     username: '',
     email: '',
     password: '',
+    confirmPassword: '',
     firstName: '',
     lastName: '',
     phone: ''
@@ -174,15 +196,16 @@ export class RegisterComponent {
   isLoading = signal<boolean>(false);
 
   onSubmit(form: NgForm) {
-    if (form.invalid) {
+    if (form.invalid || !this.passwordsMatch()) {
       form.control.markAllAsTouched();
       this.toast.warning('Por favor corrige los errores antes de continuar.');
       return;
     }
 
     this.isLoading.set(true);
+    const { confirmPassword, ...payload } = this.userData;
 
-    this.authService.register(this.userData).subscribe({
+    this.authService.register(payload).subscribe({
       next: () => {
         this.isLoading.set(false);
         this.toast.success('¡Registro exitoso! Redirigiendo al login...');
@@ -194,5 +217,9 @@ export class RegisterComponent {
         this.toast.error(msg);
       }
     });
+  }
+
+  passwordsMatch(): boolean {
+    return this.userData.password === this.userData.confirmPassword;
   }
 }

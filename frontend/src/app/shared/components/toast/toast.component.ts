@@ -8,18 +8,20 @@ import { ToastService, Toast } from './toast.service';
   imports: [NgbToastModule],
     template: `
     <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1200">
-      <ngb-toast *ngFor="let toast of toastService.toasts(); let i = index"
-                 [class]="getToastClass(toast)"
-                 [autohide]="true"
-                 [delay]="toast.duration"
-                 (hidden)="toastService.dismiss(toast.id)"
-                 [header]="getHeader(toast)"
-      >
-        <div class="d-flex align-items-center gap-2">
-          <span>{{ getIcon(toast) }}</span>
-          <span>{{ toast.message }}</span>
-        </div>
-      </ngb-toast>
+      @for (toast of toastService.toasts(); track toast.id) {
+        <ngb-toast
+          [class]="getToastClass(toast)"
+          [autohide]="true"
+          [delay]="toast.duration"
+          (hidden)="toastService.dismiss(toast.id)"
+          [header]="getHeader(toast)"
+        >
+          <div class="d-flex align-items-center gap-2">
+            <span>{{ getIcon(toast) }}</span>
+            <span>{{ toast.message }}</span>
+          </div>
+        </ngb-toast>
+      }
     </div>
   `,
   styles: [`

@@ -1,17 +1,23 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { 
-    path: 'login', 
-    loadComponent: () => import('./features/auth/components/login/login.component').then(m => m.LoginComponent)
+  // Redirige raíz a /auth/login
+  { path: '', redirectTo: 'auth', pathMatch: 'full' },
+
+  // Feature: Auth (login, register) — cargado lazy como bloque
+  {
+    path: 'auth',
+    loadChildren: () =>
+      import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
   },
-  { 
-    path: 'register', 
-    loadComponent: () => import('./features/auth/components/register/register.component').then(m => m.RegisterComponent)
+
+  // Feature: Users — cargado lazy como bloque
+  {
+    path: 'users',
+    loadChildren: () =>
+      import('./features/users/users.routes').then(m => m.USERS_ROUTES)
   },
-  { 
-    path: 'users', 
-    loadComponent: () => import('./features/users/components/users-list.component').then(m => m.UsersListComponent)
-  }
+
+  // Fallback — redirige cualquier ruta desconocida al login
+  { path: '**', redirectTo: 'auth' }
 ];

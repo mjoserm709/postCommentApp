@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
   <div class="container">
-    <a class="navbar-brand" href="#">Library App</a>
+    <a class="navbar-brand" href="#">postCommentApp</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -12,7 +12,7 @@
       </ul>
       <ul class="navbar-nav">
         <li class="nav-item">
-          <a class="nav-link" routerLink="/login" routerLinkActive="active">Login</a>
+          <a class="nav-link" routerLink="/auth/login" routerLinkActive="active">Login</a>
         </li>
       </ul>
     </div>
@@ -20,3 +20,6 @@
 </nav>
 
 <router-outlet></router-outlet>
+
+<!-- Toast global — renderizado una sola vez en el shell, disponible en toda la app -->
+<app-toast></app-toast>

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { superAdminGuard } from './core/guards/super-admin.guard';
 
 export const routes: Routes = [
   // Redirige raíz a /auth/login
@@ -14,6 +15,7 @@ export const routes: Routes = [
   // Feature: Users — cargado lazy como bloque
   {
     path: 'users',
+    canActivate: [superAdminGuard],
     loadChildren: () =>
       import('./features/users/users.routes').then(m => m.USERS_ROUTES)
   },

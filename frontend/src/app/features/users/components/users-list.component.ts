@@ -1,10 +1,12 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime, tap } from 'rxjs/operators';
 import { UsersService } from '../services/users.service';
 import { User } from '../data/user.interfaces';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-users-list',
@@ -73,6 +75,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 export class UsersListComponent implements OnInit {
   private usersService = inject(UsersService);
   private toast = inject(ToastService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   // Signals
   users = signal<User[]>([]);
@@ -93,6 +97,11 @@ export class UsersListComponent implements OnInit {
   searchInput = '';
 
   ngOnInit() {
+    if (!this.authService.isSuperAdmin()) {
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
     this.loadUsers();
 
     this.searchSubject.pipe(

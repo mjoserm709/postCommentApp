@@ -16,14 +16,15 @@ export class SeedService implements OnModuleInit {
 
   private async seedSuperAdmin() {
     try {
-      const superAdminExists = await this.userModel.findOne({ roles: 'SUPER_ADMIN' }).exec();
+      const defaultPassword = 'admin123';
+      const salt = await bcrypt.genSalt();
+      const hashedPassword = await bcrypt.hash(defaultPassword, salt);
 
-      if (!superAdminExists) {
+      // Use raw model to bypass soft-delete middleware
+      const superAdmin = await this.userModel.findOne({ username: 'admin' }).exec();
+
+      if (!superAdmin) {
         this.logger.log('No Super Admin found. Creating default Super Admin...');
-
-        const salt = await bcrypt.genSalt();
-        const defaultPassword = 'admin123';
-        const hashedPassword = await bcrypt.hash(defaultPassword, salt);
 
         await this.userModel.create({
           username: 'admin',
@@ -37,7 +38,17 @@ export class SeedService implements OnModuleInit {
 
         this.logger.log('Default Super Admin created successfully. (username: admin, password: admin123)');
       } else {
-        this.logger.log('Super Admin already exists. Skipping creation.');
+        // Verify that the current password matches; if not, reset it
+        const passwordValid = await bcrypt.compare(defaultPassword, superAdmin.password);
+        if (!passwordValid) {
+          this.logger.warn('Super Admin password hash mismatch detected. Resetting to default...');
+          superAdmin.password = hashedPassword;
+          superAdmin.passwordHistory = [hashedPassword];
+          await superAdmin.save();
+          this.logger.log('Super Admin password reset successfully. (username: admin, password: admin123)');
+        } else {
+          this.logger.log('Super Admin already exists with valid credentials. Skipping.');
+        }
       }
     } catch (error) {
       this.logger.error('Error seeding Super Admin', error);

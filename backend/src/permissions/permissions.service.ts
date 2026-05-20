@@ -1,8 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Permission, PermissionDocument } from './schemas/permission.schema';
 import { CreatePermissionDto } from './dto/create-permission.dto';
+import { UpdatePermissionDto } from './dto/update-permission.dto';
 
 @Injectable()
 export class PermissionsService {
@@ -33,5 +34,44 @@ export class PermissionsService {
       module: createPermissionDto.module.trim(),
       isActive: createPermissionDto.isActive ?? true,
     });
+  }
+
+  async update(id: string, updatePermissionDto: UpdatePermissionDto) {
+    const existingPermission = await this.permissionModel.findById(id).exec();
+
+    if (!existingPermission) {
+      throw new NotFoundException('Permission not found');
+    }
+
+    // Check if key is being updated and if it already exists
+    if (updatePermissionDto.key && updatePermissionDto.key !== existingPermission.key) {
+      const permissionWithKey = await this.permissionModel
+        .findOne({ key: updatePermissionDto.key })
+        .exec();
+
+      if (permissionWithKey) {
+        throw new ConflictException('Permission key already exists');
+      }
+    }
+
+    return this.permissionModel.findByIdAndUpdate(
+      id,
+      {
+        ...updatePermissionDto,
+        key: updatePermissionDto.key?.trim() ?? undefined,
+        module: updatePermissionDto.module?.trim() ?? undefined,
+      },
+      { new: true },
+    ).exec();
+  }
+
+  async remove(id: string) {
+    const existingPermission = await this.permissionModel.findById(id).exec();
+
+    if (!existingPermission) {
+      throw new NotFoundException('Permission not found');
+    }
+
+    return this.permissionModel.findByIdAndDelete(id).exec();
   }
 }

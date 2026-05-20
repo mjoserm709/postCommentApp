@@ -50,6 +50,27 @@ import { AuthService } from '../../auth/services/auth.service';
                     <span>{{ permission.description }}</span>
                   </div>
                   <code>{{ permission.key }}</code>
+                  <div class="action-buttons">
+                    @if (authService.hasPermission('permissions.update')) {
+                      <a
+                        [routerLink]="['/admin/permissions/edit', permission._id]"
+                        class="btn btn-sm btn-outline-primary"
+                        title="Editar permiso"
+                      >
+                        Editar
+                      </a>
+                    }
+                    @if (authService.hasPermission('permissions.delete')) {
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="deletePermission(permission._id)"
+                        title="Eliminar permiso"
+                      >
+                        Eliminar
+                      </button>
+                    }
+                  </div>
                 </article>
               }
             </div>
@@ -141,6 +162,11 @@ import { AuthService } from '../../auth/services/auth.service';
         color: #0f766e;
         white-space: nowrap;
       }
+
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+      }
     `,
   ],
 })
@@ -195,6 +221,24 @@ export class PermissionsListComponent implements OnInit {
       error: () => {
         this.isLoading.set(false);
         this.toast.error('No se pudieron cargar los permisos.');
+      },
+    });
+  }
+
+  deletePermission(id: string) {
+    if (!confirm('¿Está seguro de que desea eliminar este permiso?')) {
+      return;
+    }
+
+    this.adminAccessService.deletePermission(id).subscribe({
+      next: () => {
+        this.toast.success('Permiso eliminado correctamente.');
+        // Refresh the permissions list
+        this.ngOnInit();
+      },
+      error: (err) => {
+        const msg = err.error?.message || 'No se pudo eliminar el permiso.';
+        this.toast.error(msg);
       },
     });
   }

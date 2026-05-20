@@ -30,6 +30,13 @@ export const ADMIN_ROUTES: Routes = [
       import('./components/role-create.component').then((m) => m.RoleCreateComponent),
   },
   {
+    path: 'roles/edit/:id',
+    canActivate: [permissionGuard],
+    data: { permission: 'roles.update' },
+    loadComponent: () =>
+      import('./components/role-edit.component').then((m) => m.RoleEditComponent),
+  },
+  {
     path: 'permissions',
     canActivate: [permissionGuard],
     data: { permission: 'permissions.read' },
@@ -42,5 +49,12 @@ export const ADMIN_ROUTES: Routes = [
     data: { permission: 'permissions.create' },
     loadComponent: () =>
       import('./components/permission-create.component').then((m) => m.PermissionCreateComponent),
+  },
+  {
+    path: 'permissions/edit/:id',
+    canActivate: [permissionGuard],
+    data: { permission: 'permissions.update' },
+    loadComponent: () =>
+      import('./components/permission-edit.component').then((m) => m.PermissionEditComponent),
   },
 ];

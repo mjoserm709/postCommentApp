@@ -57,6 +57,27 @@ import { AuthService } from '../../auth/services/auth.service';
                   <span class="badge text-bg-light">{{ permission }}</span>
                 }
               </div>
+              <div class="action-buttons">
+                @if (authService.hasPermission('roles.update')) {
+                  <a
+                    [routerLink]="['/admin/roles/edit', role._id]"
+                    class="btn btn-sm btn-outline-primary"
+                    title="Editar rol"
+                  >
+                    Editar
+                  </a>
+                }
+                @if (authService.hasPermission('roles.delete') && !role.isSystem) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="deleteRole(role._id)"
+                    title="Eliminar rol"
+                  >
+                    Eliminar
+                  </button>
+                }
+              </div>
             </article>
           } @empty {
             <div class="empty-state">No se encontraron roles.</div>
@@ -65,86 +86,90 @@ import { AuthService } from '../../auth/services/auth.service';
       }
     </main>
   `,
-  styles: [
-    `
-      .admin-list {
-        width: min(1120px, calc(100% - 32px));
-        margin: 0 auto;
-        padding: 32px 0 56px;
-      }
+  styles: [`
+    .admin-list {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
 
-      .toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 22px;
-      }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
 
-      .back-link {
-        display: inline-block;
-        margin-bottom: 8px;
-        color: #0f766e;
-        font-weight: 700;
-        text-decoration: none;
-      }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 8px;
+      color: #0f766e;
+      font-weight: 700;
+      text-decoration: none;
+    }
 
-      h1,
-      h2 {
-        margin: 0;
-      }
+    h1,
+    h2 {
+      margin: 0;
+    }
 
-      .list-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 16px;
-      }
+    .list-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
 
-      .filters {
-        margin-bottom: 18px;
-      }
+    .filters {
+      margin-bottom: 18px;
+    }
 
-      .empty-state {
-        grid-column: 1 / -1;
-        padding: 28px;
-        border: 1px solid #d7dde7;
-        border-radius: 8px;
-        text-align: center;
-        color: #64748b;
-      }
+    .empty-state {
+      grid-column: 1 / -1;
+      padding: 28px;
+      border: 1px solid #d7dde7;
+      border-radius: 8px;
+      text-align: center;
+      color: #64748b;
+    }
 
-      .list-card {
-        padding: 18px;
-        border: 1px solid #d7dde7;
-        border-radius: 8px;
-        background: #fff;
-        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
-      }
+    .list-card {
+      padding: 18px;
+      border: 1px solid #d7dde7;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+    }
 
-      .card-head {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-      }
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
 
-      .key {
-        color: #64748b;
-        font-size: 0.85rem;
-        font-weight: 700;
-      }
+    .key {
+      color: #64748b;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
 
-      p {
-        margin: 12px 0;
-        color: #475569;
-      }
+    p {
+      margin: 12px 0;
+      color: #475569;
+    }
 
-      .permissions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-    `,
-  ],
+    .permissions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+  `],
 })
 export class RolesListComponent implements OnInit {
   private adminAccessService = inject(AdminAccessService);
@@ -182,6 +207,24 @@ export class RolesListComponent implements OnInit {
       error: () => {
         this.isLoading.set(false);
         this.toast.error('No se pudieron cargar los roles.');
+      },
+    });
+  }
+
+  deleteRole(id: string) {
+    if (!confirm('¿Está seguro de que desea eliminar este rol?')) {
+      return;
+    }
+
+    this.adminAccessService.deleteRole(id).subscribe({
+      next: () => {
+        this.toast.success('Rol eliminado correctamente.');
+        // Refresh the roles list
+        this.ngOnInit();
+      },
+      error: (err) => {
+        const msg = err.error?.message || 'No se pudo eliminar el rol.';
+        this.toast.error(msg);
       },
     });
   }

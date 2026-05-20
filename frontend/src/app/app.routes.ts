@@ -2,8 +2,17 @@ import { Routes } from '@angular/router';
 import { superAdminGuard } from './core/guards/super-admin.guard';
 
 export const routes: Routes = [
-  // Redirige raíz a /auth/login
-  { path: '', redirectTo: 'auth', pathMatch: 'full' },
+  // Dashboard principal: selección de categorías para posts
+  {
+    path: '',
+    loadChildren: () =>
+      import('./features/categories/categories.routes').then(m => m.CATEGORIES_ROUTES)
+  },
+  {
+    path: 'categories',
+    loadChildren: () =>
+      import('./features/categories/categories.routes').then(m => m.CATEGORIES_ROUTES)
+  },
 
   // Feature: Auth (login, register) — cargado lazy como bloque
   {

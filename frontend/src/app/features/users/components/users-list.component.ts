@@ -97,7 +97,7 @@ export class UsersListComponent implements OnInit {
   searchInput = '';
 
   ngOnInit() {
-    if (!this.authService.isSuperAdmin()) {
+    if (!this.authService.hasPermission('users.read')) {
       this.router.navigate(['/auth/login']);
       return;
     }

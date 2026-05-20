@@ -23,6 +23,7 @@ export class UsersService {
 
     const createdUser = new this.userModel({
       ...createUserDto,
+      roles: createUserDto.roles?.length ? createUserDto.roles : ['USER'],
       password: hashedPassword,
       passwordHistory: [hashedPassword],
       createdBy,

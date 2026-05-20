@@ -6,10 +6,30 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto">
-        @if (authService.isSuperAdmin()) {
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            Categorías
+          </a>
+        </li>
+        @if (authService.canAccessAdmin()) {
           <li class="nav-item">
-            <a class="nav-link" routerLink="/users" routerLinkActive="active">Usuarios</a>
+            <a class="nav-link" routerLink="/admin" routerLinkActive="active">Admin</a>
           </li>
+          @if (authService.hasPermission('users.read')) {
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/admin/users" routerLinkActive="active">Usuarios</a>
+            </li>
+          }
+          @if (authService.hasPermission('roles.read')) {
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/admin/roles" routerLinkActive="active">Roles</a>
+            </li>
+          }
+          @if (authService.hasPermission('permissions.read')) {
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/admin/permissions" routerLinkActive="active">Permisos</a>
+            </li>
+          }
         }
       </ul>
       <ul class="navbar-nav">

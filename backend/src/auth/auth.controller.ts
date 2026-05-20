@@ -14,8 +14,10 @@ export class AuthController {
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() createUserDto: CreateUserDto) {
-    // Default role 'user' is handled by the schema default
-    const user = await this.usersService.create(createUserDto);
+    const user = await this.usersService.create({
+      ...createUserDto,
+      roles: ['USER'],
+    });
     // Return without password
     const { password, passwordHistory, ...result } = user.toObject();
     return result;

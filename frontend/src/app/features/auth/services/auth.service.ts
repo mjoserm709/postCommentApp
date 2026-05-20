@@ -98,8 +98,30 @@ export class AuthService {
     return Array.isArray(roles) && roles.includes(role);
   }
 
+  hasPermission(permission: string): boolean {
+    const user = this.getCurrentUser();
+    const roles = user?.roles;
+    const permissions = user?.permissions;
+
+    if (Array.isArray(roles) && roles.includes('SUPER_ADMIN')) {
+      return true;
+    }
+
+    return Array.isArray(permissions) && permissions.includes(permission);
+  }
+
   isSuperAdmin(): boolean {
     return this.isAuthenticated() && this.hasRole('SUPER_ADMIN');
+  }
+
+  canAccessAdmin(): boolean {
+    return (
+      this.hasPermission('users.read') ||
+      this.hasPermission('roles.read') ||
+      this.hasPermission('roles.create') ||
+      this.hasPermission('permissions.read') ||
+      this.hasPermission('permissions.create')
+    );
   }
 
   private readStoredUser(): any | null {

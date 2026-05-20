@@ -26,7 +26,7 @@ export class User {
   @Prop({ required: false })
   phone?: string;
 
-  @Prop({ type: [String], default: ['user'] })
+  @Prop({ type: [String], default: ['USER'] })
   roles!: string[];
 
   @Prop({ default: true })

@@ -1,5 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
-import { ActivatedRoute, FormsModule, NgForm, Router } from '@angular/router';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule, NgForm } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminAccessService } from '../services/admin-access.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { Permission } from '../data/access.interfaces';
@@ -7,7 +8,7 @@ import { Permission } from '../data/access.interfaces';
 @Component({
   selector: 'app-role-edit',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <main class="form-page">
       <a routerLink="/admin/roles" class="back-link">Volver a roles</a>

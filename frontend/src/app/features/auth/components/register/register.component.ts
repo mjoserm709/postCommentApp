@@ -1,225 +1,207 @@
-import { Component, inject, signal } from '@angular/core';
-import { FormsModule, NgForm } from '@angular/forms';
+import { Component, computed, inject, signal } from '@angular/core';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
+import { PASSWORD_PATTERN } from '../../../../shared/pipes/password-strength.pipe';
 import { PasswordStrengthPipe } from '../../../../shared/pipes/password-strength.pipe';
-import { PasswordValidatorDirective } from '../../../../shared/validators/password-validator.directive';
+
+function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+  const password = control.get('password')?.value;
+  const confirmPassword = control.get('confirmPassword')?.value;
+
+  if (!password || !confirmPassword) {
+    return null;
+  }
+
+  return password === confirmPassword ? null : { passwordMismatch: true };
+}
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, RouterModule, PasswordStrengthPipe, PasswordValidatorDirective],
+  imports: [ReactiveFormsModule, RouterModule],
   template: `
-    <div class="container d-flex justify-content-center align-items-center min-vh-100 py-5">
-      <div class="card shadow-lg p-4" style="width: 100%; max-width: 500px; border-radius: 1rem;">
-
+    <div class="container d-flex justify-content-center align-items-center min-vh-100 py-5 px-3">
+      <div class="card shadow-lg p-4 auth-card">
         <div class="text-center mb-4">
           <h2 class="fw-bold">Crear Cuenta</h2>
-          <p class="text-muted">Únete a nuestra plataforma</p>
+          <p class="text-muted mb-0">Unete a nuestra plataforma</p>
         </div>
 
-        <form #registerForm="ngForm" (ngSubmit)="onSubmit(registerForm)">
-
-          <!-- Nombre y Apellido -->
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
           <div class="row">
             <div class="col-md-6 mb-3">
               <label class="form-label">Nombre</label>
-              <input
-                type="text"
-                class="form-control"
-                [(ngModel)]="userData.firstName"
-                name="firstName"
-                required
-                #firstNameCtrl="ngModel"
-                [class.is-invalid]="firstNameCtrl.invalid && firstNameCtrl.touched"
-              >
-              @if (firstNameCtrl.invalid && firstNameCtrl.touched) {
+              <input type="text" class="form-control" formControlName="firstName" [class.is-invalid]="showError('firstName')">
+              @if (showError('firstName')) {
                 <div class="invalid-feedback">El nombre es requerido.</div>
               }
             </div>
+
             <div class="col-md-6 mb-3">
               <label class="form-label">Apellido</label>
-              <input
-                type="text"
-                class="form-control"
-                [(ngModel)]="userData.lastName"
-                name="lastName"
-                required
-                #lastNameCtrl="ngModel"
-                [class.is-invalid]="lastNameCtrl.invalid && lastNameCtrl.touched"
-              >
-              @if (lastNameCtrl.invalid && lastNameCtrl.touched) {
+              <input type="text" class="form-control" formControlName="lastName" [class.is-invalid]="showError('lastName')">
+              @if (showError('lastName')) {
                 <div class="invalid-feedback">El apellido es requerido.</div>
               }
             </div>
           </div>
 
-          <!-- Usuario -->
           <div class="mb-3">
             <label class="form-label">Usuario</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="userData.username"
-              name="username"
-              required
-              #usernameCtrl="ngModel"
-              [class.is-invalid]="usernameCtrl.invalid && usernameCtrl.touched"
-            >
-            @if (usernameCtrl.invalid && usernameCtrl.touched) {
+            <input type="text" class="form-control" formControlName="username" [class.is-invalid]="showError('username')">
+            @if (showError('username')) {
               <div class="invalid-feedback">El usuario es requerido.</div>
             }
           </div>
 
-          <!-- Email -->
           <div class="mb-3">
             <label class="form-label">Email</label>
-            <input
-              type="email"
-              class="form-control"
-              [(ngModel)]="userData.email"
-              name="email"
-              required
-              email
-              #emailCtrl="ngModel"
-              [class.is-invalid]="emailCtrl.invalid && emailCtrl.touched"
-            >
-            @if (emailCtrl.invalid && emailCtrl.touched) {
-              @if (emailCtrl.errors?.['required']) {
-                <div class="invalid-feedback">El email es requerido.</div>
-              } @else {
-                <div class="invalid-feedback">Ingresa un email válido.</div>
-              }
+            <input type="email" class="form-control" formControlName="email" [class.is-invalid]="showError('email')">
+            @if (showError('email')) {
+              <div class="invalid-feedback">
+                {{ form.controls.email.errors?.['required'] ? 'El email es requerido.' : 'Ingresa un email valido.' }}
+              </div>
             }
           </div>
 
-          <!-- Contraseña + Pipe de validación en tiempo real -->
           <div class="mb-3">
-            <label class="form-label">Contraseña</label>
+            <label class="form-label">Contrasena</label>
             <input
               type="password"
               class="form-control"
-              [(ngModel)]="userData.password"
-              name="password"
-              required
-              appPasswordValidator
-              #passwordCtrl="ngModel"
-              [class.is-invalid]="passwordCtrl.invalid && passwordCtrl.touched"
-              [class.is-valid]="passwordCtrl.valid && passwordCtrl.touched"
+              formControlName="password"
+              [class.is-invalid]="showError('password')"
+              [class.is-valid]="form.controls.password.valid && form.controls.password.touched"
             >
 
-            <!-- Checklist en tiempo real usando el Pipe -->
-            @let strength = userData.password | passwordStrength;
-
+            @let strength = passwordStrength();
             <div class="mt-2 px-1">
-              <small class="d-block fw-semibold text-muted mb-1">Requisitos de contraseña:</small>
-              <ul class="list-unstyled mb-0" style="font-size: 0.8rem;">
-                <li [class.text-success]="strength.hasMinLength" [class.text-danger]="!strength.hasMinLength && passwordCtrl.touched">
-                  {{ strength.hasMinLength ? '✅' : '❌' }} Mínimo 8 caracteres
+              <small class="d-block fw-semibold text-muted mb-1">Requisitos de contrasena:</small>
+              <ul class="list-unstyled mb-0 helper-list">
+                <li [class.text-success]="strength.hasMinLength" [class.text-danger]="!strength.hasMinLength && form.controls.password.touched">
+                  {{ strength.hasMinLength ? 'OK' : 'NO' }} Minimo 8 caracteres
                 </li>
-                <li [class.text-success]="strength.hasUppercase" [class.text-danger]="!strength.hasUppercase && passwordCtrl.touched">
-                  {{ strength.hasUppercase ? '✅' : '❌' }} Al menos una mayúscula (A-Z)
+                <li [class.text-success]="strength.hasUppercase" [class.text-danger]="!strength.hasUppercase && form.controls.password.touched">
+                  {{ strength.hasUppercase ? 'OK' : 'NO' }} Al menos una mayuscula
                 </li>
-                <li [class.text-success]="strength.hasLowercase" [class.text-danger]="!strength.hasLowercase && passwordCtrl.touched">
-                  {{ strength.hasLowercase ? '✅' : '❌' }} Al menos una minúscula (a-z)
+                <li [class.text-success]="strength.hasLowercase" [class.text-danger]="!strength.hasLowercase && form.controls.password.touched">
+                  {{ strength.hasLowercase ? 'OK' : 'NO' }} Al menos una minuscula
                 </li>
-                <li [class.text-success]="strength.hasDigit" [class.text-danger]="!strength.hasDigit && passwordCtrl.touched">
-                  {{ strength.hasDigit ? '✅' : '❌' }} Al menos un número (0-9)
+                <li [class.text-success]="strength.hasDigit" [class.text-danger]="!strength.hasDigit && form.controls.password.touched">
+                  {{ strength.hasDigit ? 'OK' : 'NO' }} Al menos un numero
                 </li>
-                <li [class.text-success]="strength.hasSpecial" [class.text-danger]="!strength.hasSpecial && passwordCtrl.touched">
-                  {{ strength.hasSpecial ? '✅' : '❌' }} Al menos un carácter especial (@$!%*?&.#_-)
+                <li [class.text-success]="strength.hasSpecial" [class.text-danger]="!strength.hasSpecial && form.controls.password.touched">
+                  {{ strength.hasSpecial ? 'OK' : 'NO' }} Al menos un caracter especial
                 </li>
               </ul>
             </div>
           </div>
 
-          <!-- Confirmar contraseña -->
           <div class="mb-4">
-            <label class="form-label">Confirmar contraseña</label>
+            <label class="form-label">Confirmar contrasena</label>
             <input
               type="password"
               class="form-control"
-              [(ngModel)]="userData.confirmPassword"
-              name="confirmPassword"
-              required
-              #confirmPasswordCtrl="ngModel"
-              [class.is-invalid]="confirmPasswordCtrl.touched && (confirmPasswordCtrl.invalid || !passwordsMatch())"
-              [class.is-valid]="confirmPasswordCtrl.touched && confirmPasswordCtrl.valid && passwordsMatch()"
+              formControlName="confirmPassword"
+              [class.is-invalid]="confirmPasswordInvalid()"
+              [class.is-valid]="confirmPasswordValid()"
             >
-
-            @if (confirmPasswordCtrl.touched && confirmPasswordCtrl.errors?.['required']) {
-              <div class="invalid-feedback">Confirma la contraseña.</div>
-            } @else if (confirmPasswordCtrl.touched && !passwordsMatch()) {
-              <div class="invalid-feedback">Las contraseñas no coinciden.</div>
+            @if (form.controls.confirmPassword.touched && form.controls.confirmPassword.errors?.['required']) {
+              <div class="invalid-feedback">Confirma la contrasena.</div>
+            } @else if (form.touched && form.errors?.['passwordMismatch']) {
+              <div class="invalid-feedback">Las contrasenas no coinciden.</div>
             }
           </div>
 
-          <!-- Botón -->
           <div class="d-grid gap-2">
-            <button
-              type="submit"
-              class="btn btn-primary btn-lg"
-              [disabled]="isLoading() || registerForm.invalid || !passwordsMatch()"
-            >
+            <button type="submit" class="btn btn-primary btn-lg" [disabled]="isLoading() || form.invalid">
               @if (isLoading()) {
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
               }
               {{ isLoading() ? 'Procesando...' : 'Registrarse' }}
             </button>
           </div>
-
         </form>
 
         <div class="text-center mt-4">
-          <p class="mb-0">¿Ya tienes cuenta? <a routerLink="/auth/login" class="text-decoration-none fw-bold">Inicia Sesión</a></p>
+          <p class="mb-0">
+            Ya tienes cuenta?
+            <a routerLink="/auth/login" class="text-decoration-none fw-bold">Inicia sesion</a>
+          </p>
         </div>
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    .auth-card {
+      width: 100%;
+      max-width: 520px;
+      border-radius: 1rem;
+    }
+
+    .helper-list {
+      font-size: 0.8rem;
+    }
+  `],
 })
 export class RegisterComponent {
+  private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
   private toast = inject(ToastService);
+  private passwordStrengthPipe = new PasswordStrengthPipe();
 
-  userData = {
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    firstName: '',
-    lastName: '',
-    phone: ''
-  };
+  isLoading = signal(false);
 
-  isLoading = signal<boolean>(false);
+  form = this.fb.nonNullable.group({
+    username: ['', [Validators.required]],
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.pattern(PASSWORD_PATTERN)]],
+    confirmPassword: ['', [Validators.required]],
+    firstName: ['', [Validators.required]],
+    lastName: ['', [Validators.required]],
+    phone: [''],
+  }, { validators: passwordMatchValidator });
 
-  onSubmit(form: NgForm) {
-    if (form.invalid || !this.passwordsMatch()) {
-      form.control.markAllAsTouched();
+  passwordStrength = computed(() => this.passwordStrengthPipe.transform(this.form.controls.password.value));
+
+  onSubmit() {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
       this.toast.warning('Por favor corrige los errores antes de continuar.');
       return;
     }
 
     this.isLoading.set(true);
-    const { confirmPassword, ...payload } = this.userData;
+    const { confirmPassword, ...payload } = this.form.getRawValue();
 
     this.authService.register(payload).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.toast.success('¡Registro exitoso! Redirigiendo al login...');
+        this.toast.success('Registro exitoso. Redirigiendo al login...');
         setTimeout(() => this.router.navigate(['/auth/login']), 2000);
       },
-      error: (err) => {
+      error: () => {
         this.isLoading.set(false);
-        const msg = err.error?.message || 'Hubo un error en el registro';
-        this.toast.error(msg);
-      }
+      },
     });
   }
 
-  passwordsMatch(): boolean {
-    return this.userData.password === this.userData.confirmPassword;
+  showError(controlName: 'firstName' | 'lastName' | 'username' | 'email' | 'password') {
+    const control = this.form.controls[controlName];
+    return control.invalid && control.touched;
+  }
+
+  confirmPasswordInvalid() {
+    return this.form.controls.confirmPassword.touched &&
+      (this.form.controls.confirmPassword.invalid || !!this.form.errors?.['passwordMismatch']);
+  }
+
+  confirmPasswordValid() {
+    return this.form.controls.confirmPassword.touched &&
+      this.form.controls.confirmPassword.valid &&
+      !this.form.errors?.['passwordMismatch'];
   }
 }

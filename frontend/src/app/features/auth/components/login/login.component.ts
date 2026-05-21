@@ -1,85 +1,109 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { ToastService } from '../../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterModule],
+  imports: [ReactiveFormsModule, RouterModule],
   template: `
-    <div class="container d-flex justify-content-center align-items-center min-vh-100">
-      <div class="card shadow-lg p-4" style="width: 100%; max-width: 400px; border-radius: 1rem;">
+    <div class="container d-flex justify-content-center align-items-center min-vh-100 px-3">
+      <div class="card shadow-lg p-4 auth-card">
         <div class="text-center mb-4">
           <h2 class="fw-bold">Bienvenido</h2>
-          <p class="text-muted">Inicia sesión en tu cuenta</p>
+          <p class="text-muted mb-0">Inicia sesion en tu cuenta</p>
         </div>
 
-        <form (ngSubmit)="onSubmit()">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
           <div class="mb-3">
             <label for="username" class="form-label">Usuario</label>
             <input
+              id="username"
               type="text"
               class="form-control form-control-lg"
-              id="username"
-              [(ngModel)]="credentials.username"
-              name="username"
-              required
+              formControlName="username"
+              [class.is-invalid]="showError('username')"
             >
+            @if (showError('username')) {
+              <div class="invalid-feedback">El usuario es requerido.</div>
+            }
           </div>
 
           <div class="mb-4">
-            <label for="password" class="form-label">Contraseña</label>
+            <label for="password" class="form-label">Contrasena</label>
             <input
+              id="password"
               type="password"
               class="form-control form-control-lg"
-              id="password"
-              [(ngModel)]="credentials.password"
-              name="password"
-              required
+              formControlName="password"
+              [class.is-invalid]="showError('password')"
             >
+            @if (showError('password')) {
+              <div class="invalid-feedback">La contrasena es requerida.</div>
+            }
           </div>
 
           <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary btn-lg" [disabled]="isLoading()">
+            <button type="submit" class="btn btn-primary btn-lg" [disabled]="isLoading() || form.invalid">
               @if (isLoading()) {
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
               }
-              {{ isLoading() ? 'Ingresando...' : 'Iniciar Sesión' }}
+              {{ isLoading() ? 'Ingresando...' : 'Iniciar sesion' }}
             </button>
           </div>
         </form>
 
         <div class="text-center mt-4">
-          <p class="mb-0">¿No tienes cuenta? <a routerLink="/auth/register" class="text-decoration-none fw-bold">Regístrate</a></p>
+          <p class="mb-0">
+            No tienes cuenta?
+            <a routerLink="/auth/register" class="text-decoration-none fw-bold">Registrate</a>
+          </p>
         </div>
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 1rem;
+    }
+  `],
 })
 export class LoginComponent {
+  private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
-  private toast = inject(ToastService);
 
-  credentials = { username: '', password: '' };
-  isLoading = signal<boolean>(false);
+  isLoading = signal(false);
+
+  form = this.fb.nonNullable.group({
+    username: ['', [Validators.required]],
+    password: ['', [Validators.required]],
+  });
 
   onSubmit() {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
     this.isLoading.set(true);
 
-    this.authService.login(this.credentials).subscribe({
+    this.authService.login(this.form.getRawValue()).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.toast.success('¡Bienvenido! Sesión iniciada correctamente.');
         this.router.navigate(['/']);
       },
-      error: (err) => {
+      error: () => {
         this.isLoading.set(false);
-        const msg = err.error?.message || 'Usuario o contraseña incorrectos';
-        this.toast.error(msg);
-      }
+      },
     });
+  }
+
+  showError(controlName: 'username' | 'password') {
+    const control = this.form.controls[controlName];
+    return control.invalid && control.touched;
   }
 }

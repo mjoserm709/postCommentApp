@@ -3,30 +3,34 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { ApiResponse } from '../../../core/models/api-response';
+import { ToastService } from '../../../shared/components/toast/toast.service';
+import { SessionState, SessionUser } from '../data/session.interfaces';
 
 export interface AuthResponse extends ApiResponse<{
   access_token: string;
-  user: any;
+  user: SessionUser;
 }> {}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+  private static readonly SESSION_KEY = 'app_session';
   private http = inject(HttpClient);
   private router = inject(Router);
+  private toast = inject(ToastService);
   private apiUrl = 'http://localhost:3000/auth';
-  private readonly accessToken = signal<string | null>(localStorage.getItem('access_token'));
-  private readonly currentUser = signal<any | null>(this.readStoredUser());
+  private readonly session = signal<SessionState | null>(this.readStoredSession());
 
-  login(credentials: any): Observable<AuthResponse> {
+  constructor() {
+    this.ensureSessionValidity();
+  }
+
+  login(credentials: { username: string; password: string }): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
       tap((response) => {
         if (response.data && response.data.access_token) {
-          localStorage.setItem('access_token', response.data.access_token);
-          localStorage.setItem('auth_user', JSON.stringify(response.data.user));
-          this.accessToken.set(response.data.access_token);
-          this.currentUser.set(response.data.user);
+          this.setSession(response.data.access_token, response.data.user);
         }
       })
     );
@@ -39,47 +43,28 @@ export class AuthService {
   }
 
   logout() {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('auth_user');
-    this.accessToken.set(null);
-    this.currentUser.set(null);
+    this.clearSession();
     this.router.navigate(['/auth/login']);
   }
 
   isAuthenticated(): boolean {
-    return !!this.accessToken();
+    this.ensureSessionValidity();
+    return !!this.session();
   }
 
-  getCurrentUser(): any | null {
-    const user = this.currentUser();
-    if (user) {
-      return user;
-    }
+  getCurrentUser(): SessionUser | null {
+    this.ensureSessionValidity();
+    return this.session()?.user ?? null;
+  }
 
-    const storedUser = localStorage.getItem('auth_user');
+  getAccessToken(): string | null {
+    this.ensureSessionValidity();
+    return this.session()?.token ?? null;
+  }
 
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        this.currentUser.set(parsedUser);
-        return parsedUser;
-      } catch {
-        localStorage.removeItem('auth_user');
-      }
-    }
-
-    const token = this.accessToken();
-    if (!token) {
-      return null;
-    }
-
-    try {
-      const payload = token.split('.')[1];
-      const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(atob(normalizedPayload));
-    } catch {
-      return null;
-    }
+  getSession(): SessionState | null {
+    this.ensureSessionValidity();
+    return this.session();
   }
 
   hasRole(role: string): boolean {
@@ -115,17 +100,75 @@ export class AuthService {
     );
   }
 
-  private readStoredUser(): any | null {
-    const storedUser = localStorage.getItem('auth_user');
-    if (!storedUser) {
+  handleUnauthorized() {
+    if (!this.session()) {
+      return;
+    }
+
+    this.clearSession();
+    this.toast.info('Tu sesion expiro. Inicia sesion nuevamente.');
+    this.router.navigate(['/auth/login']);
+  }
+
+  private setSession(token: string, user: SessionUser) {
+    const session: SessionState = {
+      token,
+      user,
+      expiresAt: this.readTokenExpiration(token),
+    };
+
+    localStorage.setItem(AuthService.SESSION_KEY, JSON.stringify(session));
+    this.session.set(session);
+  }
+
+  private clearSession() {
+    localStorage.removeItem(AuthService.SESSION_KEY);
+    this.session.set(null);
+  }
+
+  private readStoredSession(): SessionState | null {
+    const storedSession = localStorage.getItem(AuthService.SESSION_KEY);
+    if (!storedSession) {
       return null;
     }
 
     try {
-      return JSON.parse(storedUser);
+      const session = JSON.parse(storedSession) as SessionState;
+      if (!session.token || !session.user) {
+        this.clearSession();
+        return null;
+      }
+
+      return session;
     } catch {
-      localStorage.removeItem('auth_user');
+      localStorage.removeItem(AuthService.SESSION_KEY);
       return null;
     }
+  }
+
+  private ensureSessionValidity() {
+    const currentSession = this.session();
+    if (!currentSession) {
+      return;
+    }
+
+    if (currentSession.expiresAt && currentSession.expiresAt <= Date.now()) {
+      this.clearSession();
+    }
+  }
+
+  private readTokenExpiration(token: string): number | null {
+    try {
+      const payload = this.decodeTokenPayload(token) as { exp?: number };
+      return payload.exp ? payload.exp * 1000 : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private decodeTokenPayload(token: string): Record<string, unknown> {
+    const payload = token.split('.')[1];
+    const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(normalizedPayload));
   }
 }

@@ -30,6 +30,11 @@
               <a class="nav-link" routerLink="/admin/permissions" routerLinkActive="active">Permisos</a>
             </li>
           }
+          @if (authService.hasPermission('posts.read')) {
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/admin/posts" routerLinkActive="active">Posts</a>
+            </li>
+          }
         }
       </ul>
       <ul class="navbar-nav">

@@ -64,4 +64,11 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () =>
       import('./components/permission-edit.component').then((m) => m.PermissionEditComponent),
   },
+  {
+    path: 'posts',
+    canActivate: [permissionGuard],
+    data: { permission: 'posts.read' },
+    loadComponent: () =>
+      import('../posts/components/posts-admin.component').then((m) => m.PostsAdminComponent),
+  },
 ];

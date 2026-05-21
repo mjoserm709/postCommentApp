@@ -1,0 +1,61 @@
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { BulkCreatePostsDto } from './dto/bulk-create-posts.dto';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
+import { PostsService } from './posts.service';
+
+@Controller('posts')
+export class PostsController {
+  constructor(private readonly postsService: PostsService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('posts.read')
+  findAll() {
+    return this.postsService.findAll();
+  }
+
+  @Get('category/:categorySlug')
+  findPublishedByCategory(@Param('categorySlug') categorySlug: string) {
+    return this.postsService.findPublishedByCategory(categorySlug);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('posts.read')
+  findOne(@Param('id') id: string) {
+    return this.postsService.findOne(id);
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('posts.create')
+  create(@Body() createPostDto: CreatePostDto, @Req() request: Request) {
+    return this.postsService.create(createPostDto, (request.user as any)?.userId);
+  }
+
+  @Post('bulk')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('posts.create')
+  createBulk(@Body() bulkCreatePostsDto: BulkCreatePostsDto, @Req() request: Request) {
+    return this.postsService.createBulk(bulkCreatePostsDto, (request.user as any)?.userId);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('posts.update')
+  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
+    return this.postsService.update(id, updatePostDto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('posts.delete')
+  remove(@Param('id') id: string) {
+    return this.postsService.remove(id);
+  }
+}

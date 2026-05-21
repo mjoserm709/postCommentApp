@@ -9,6 +9,8 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { CategoriesModule } from './categories/categories.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { RolesModule } from './roles/roles.module';
+import { PostsModule } from './posts/posts.module';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { RolesModule } from './roles/roles.module';
     CategoriesModule,
     PermissionsModule,
     RolesModule,
+    PostsModule,
+    CommentsModule,
     SeedModule,
   ],
   controllers: [AppController],

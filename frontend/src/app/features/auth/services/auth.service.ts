@@ -120,7 +120,9 @@ export class AuthService {
       this.hasPermission('roles.read') ||
       this.hasPermission('roles.create') ||
       this.hasPermission('permissions.read') ||
-      this.hasPermission('permissions.create')
+      this.hasPermission('permissions.create') ||
+      this.hasPermission('posts.read') ||
+      this.hasPermission('posts.create')
     );
   }
 

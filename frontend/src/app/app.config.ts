@@ -1,8 +1,9 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withPreloading, PreloadAllModules } from '@angular/router';
-import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
+import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -12,7 +13,7 @@ export const appConfig: ApplicationConfig = {
     // withPreloading(PreloadAllModules): después del primer chunk cargado,
     // Angular descarga en background todos los demás features de manera silenciosa
     provideRouter(routes, withPreloading(PreloadAllModules)),
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withInterceptors([errorInterceptor]), withInterceptorsFromDi()),
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
   ]
 };

@@ -11,6 +11,6 @@ export const CATEGORIES_ROUTES: Routes = [
   {
     path: ':slug',
     loadComponent: () =>
-      import('./components/category-detail.component').then((m) => m.CategoryDetailComponent),
+      import('../posts/pages/post-detail.page').then((m) => m.PostDetailPage),
   },
 ];

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Post, PostDocument } from '../posts/schemas/post.schema';
@@ -52,6 +52,26 @@ export class CommentsService {
       .exec();
 
     return this.serializeComment(comment.toObject(), author);
+  }
+
+  async remove(id: string, currentUserId: string) {
+    const comment = await this.commentModel.findById(id).exec();
+
+    if (!comment || !comment.isActive) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.authorId.toString() !== currentUserId) {
+      throw new ForbiddenException('You can only delete your own comments');
+    }
+
+    comment.isActive = false;
+    await comment.save();
+
+    return {
+      _id: comment._id.toString(),
+      deleted: true,
+    };
   }
 
   private serializeComment(comment: any, author?: any) {

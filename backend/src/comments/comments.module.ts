@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Post, PostSchema } from '../posts/schemas/post.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { CommentsController } from './comments.controller';
+import { NestedCommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';
 import { Comment, CommentSchema } from './schemas/comment.schema';
 
@@ -14,7 +15,7 @@ import { Comment, CommentSchema } from './schemas/comment.schema';
       { name: User.name, schema: UserSchema },
     ]),
   ],
-  controllers: [CommentsController],
+  controllers: [CommentsController, NestedCommentsController],
   providers: [CommentsService],
 })
 export class CommentsModule {}

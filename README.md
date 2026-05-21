@@ -1,146 +1,220 @@
-# postCommentApp — NestJS + Angular + MongoDB
+# postCommentApp
 
-Aplicación full-stack para gestión de usuarios y autenticación, construida con **Angular 19 (Standalone + Signals)** en el frontend y **NestJS** en el backend, conectado a **MongoDB** mediante Mongoose.
+Aplicacion full-stack con `NestJS + MongoDB + Angular standalone` orientada a la prueba tecnica de posts y comentarios. El proyecto incluye autenticacion JWT, respuestas estandarizadas, carga masiva de posts, manejo global de errores y un frontend con Signals, RxJS y formularios reactivos para el flujo principal.
 
----
+## Stack
 
-## 🏗️ Arquitectura del Proyecto
+- Backend: NestJS 11, Mongoose, MongoDB, JWT, Swagger
+- Frontend: Angular 20 standalone, Signals, RxJS, Reactive Forms, Bootstrap
+- Infra: Docker y Docker Compose
 
+## Estructura principal
+
+```text
+backend/src
+├── posts
+├── comments
+├── auth
+├── users
+└── common
+    ├── filters
+    ├── interceptors
+    ├── responses
+    └── utils
+
+frontend/src/app
+├── core
+│   ├── interceptors
+│   ├── models
+│   └── services
+├── features
+│   ├── posts
+│   │   ├── pages
+│   │   ├── components
+│   │   └── services
+│   ├── comments
+│   │   ├── components
+│   │   └── services
+│   └── categories
+└── shared
 ```
-postCommentApp/
-├── backend/          # API REST con NestJS
-│   └── src/
-│       ├── auth/     # Módulo de autenticación (login, registro, JWT)
-│       ├── users/    # Módulo de usuarios (CRUD)
-│       ├── common/   # Filtros, interceptors y utilidades globales
-│       └── seed/     # Seeder inicial (crea el Super Admin)
-│
-├── frontend/         # SPA con Angular 19
-│   └── src/app/
-│       ├── core/     # Interceptors (JWT)
-│       └── features/
-│           ├── auth/   # Login y Registro
-│           └── users/  # Lista de usuarios
-│
-├── docker-compose.yml
-└── package.json      # Scripts para ejecutar ambos entornos
+
+## Requisitos
+
+- Node.js 18+
+- npm 9+
+- Docker Desktop o una instancia local de MongoDB
+
+## Variables de entorno
+
+El backend usa estas variables:
+
+```env
+PORT=3000
+MONGO_URI=mongodb://localhost:27017/library
+JWT_SECRET=super-secret-key
 ```
 
----
+Si no defines `MONGO_URI`, el backend usa `mongodb://localhost:27017/library`.
 
-## ⚙️ Requisitos Previos
+## Instalacion
 
-- **Node.js** v18+ y **npm**
-- **Docker** y **Docker Desktop** (con WSL2 habilitado en Windows)
-
-> **⚠️ PCs con 8GB de RAM:** Docker puede consumir toda la memoria al usar WSL2.
-> Crea o edita el archivo `C:\Users\tu_usuario\.wslconfig` con:
-> ```ini
-> [wsl2]
-> memory=3GB
-> ```
-> Reinicia tu PC o Docker después de aplicarlo.
-
----
-
-## 🚀 Cómo Ejecutar el Proyecto
-
-### Opción 1 — Ambos entornos a la vez (Recomendado para desarrollo)
-
-Desde la raíz del proyecto, con MongoDB ya corriendo en Docker:
+### 1. Instalar dependencias
 
 ```bash
-# 1. Levanta MongoDB
-docker-compose up mongodb -d
-
-# 2. Instala dependencias raíz (solo la primera vez)
 npm install
-
-# 3. Inicia backend y frontend simultáneamente
-npm run start:all
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-| Servicio  | URL                        |
-|-----------|----------------------------|
-| Backend   | http://localhost:3000      |
-| Swagger   | http://localhost:3000/api/docs |
-| Frontend  | http://localhost:4200      |
+### 2. Levantar MongoDB
 
----
+Con Docker:
 
-### Opción 2 — Individualmente
+```bash
+docker-compose up mongodb -d
+```
 
-**Backend:**
+### 3. Ejecutar backend
+
 ```bash
 cd backend
-npm install
 npm run start:dev
 ```
 
-**Frontend:**
+Backend disponible en `http://localhost:3000`
+
+Swagger disponible en `http://localhost:3000/api/docs`
+
+### 4. Ejecutar frontend
+
 ```bash
 cd frontend
-npm install
 npm start
 ```
 
----
+Frontend disponible en `http://localhost:4200`
 
-### Opción 3 — Con Docker Completo
+## Scripts utiles
+
+### Raiz
 
 ```bash
-docker-compose up --build
+npm run start:all
 ```
 
-Levanta 2 contenedores:
-- `mongodb`: Base de datos en el puerto `27017`
-- `backend`: API NestJS en el puerto `3000`
+### Backend
 
-Para detener: `Ctrl + C` y luego `docker-compose down`
+```bash
+npm run start:dev
+npm run build
+npm run test
+npm run test:e2e
+```
 
----
+### Frontend
 
-## 🔐 Credenciales por Defecto
+```bash
+npm start
+npm run build
+npm test
+```
 
-Al iniciar el backend por primera vez, el **Seeder** crea automáticamente un Super Admin:
+## Autenticacion
 
-| Campo    | Valor              |
-|----------|--------------------|
-| Usuario  | `admin`            |
-| Password | `admin123`         |
-| Rol      | `SUPER_ADMIN`      |
+El proyecto usa JWT. El `AuthInterceptor` agrega el token a las peticiones autenticadas y el `errorInterceptor` centraliza errores HTTP para mostrar mensajes uniformes en UI.
 
----
+## Respuesta estandar de API
 
-## 📡 Endpoints Disponibles
+Respuestas exitosas:
 
-### Auth — `/auth`
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": {}
+}
+```
 
-| Método | Ruta             | Descripción              | Auth |
-|--------|------------------|--------------------------|------|
-| POST   | `/auth/login`    | Iniciar sesión (JWT)     | ❌   |
-| POST   | `/auth/register` | Registrar nuevo usuario  | ❌   |
+Respuestas con error:
 
-### Users — `/users`
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "error": {
+    "code": "Bad Request",
+    "details": {}
+  }
+}
+```
 
-| Método | Ruta          | Descripción              | Auth |
-|--------|---------------|--------------------------|------|
-| GET    | `/users`      | Listar todos los usuarios | ✅  |
-| GET    | `/users/:id`  | Obtener usuario por ID   | ✅   |
-| PATCH  | `/users/:id`  | Actualizar usuario       | ✅   |
-| DELETE | `/users/:id`  | Eliminar usuario (soft)  | ✅   |
+## Endpoints principales
 
-> La documentación completa e interactiva está en **Swagger**: `http://localhost:3000/api/docs`
+### Auth
 
----
+- `POST /auth/login`
+- `POST /auth/register`
 
-## 🧱 Stack Tecnológico
+### Posts
 
-| Capa       | Tecnología                            |
-|------------|---------------------------------------|
-| Frontend   | Angular 19, Standalone Components, Signals, ng-bootstrap |
-| Backend    | NestJS, Passport.js, JWT              |
-| Base de datos | MongoDB, Mongoose                 |
-| Validación | class-validator, class-transformer    |
-| Docs API   | Swagger / OpenAPI                     |
-| Contenedores | Docker, Docker Compose             |
+- `GET /posts`
+- `GET /posts/:id`
+- `POST /posts`
+- `PUT /posts/:id`
+- `DELETE /posts/:id`
+- `POST /posts/bulk`
+- `GET /posts/category/:categorySlug`
+
+### Comments
+
+- `GET /comments?postId=<id>`
+- `POST /comments`
+- `DELETE /comments/:id`
+
+Compatibilidad adicional:
+
+- `GET /posts/:postId/comments`
+- `POST /posts/:postId/comments`
+
+## Bulk insert
+
+El endpoint `POST /posts/bulk` usa `insertMany()` y valida:
+
+- arreglo minimo de posts
+- duplicados dentro del lote
+- slugs ya existentes en base de datos
+
+Respuesta esperada:
+
+```json
+{
+  "success": true,
+  "message": "Created",
+  "data": {
+    "importId": "lote-mayo-2026",
+    "count": 3,
+    "posts": []
+  }
+}
+```
+
+## Flujo principal en frontend
+
+- `admin/posts`: listado administrativo, busqueda, creacion y carga masiva
+- `categories/:slug`: listado publico por categoria
+- modal de comentarios con listado y formulario reactivo
+- formulario reactivo de post con validaciones
+- estado manejado con Signals y filtros con `computed`
+- RxJS con `switchMap`, `tap`, `catchError`, `delay` y `retry`
+
+## Verificacion realizada
+
+- `backend`: `npm run build`
+- `frontend`: `npm run build`
+
+## Pendientes recomendados
+
+- ampliar cobertura automatizada de posts/comments
+- agregar coleccion Postman exportada
+- adjuntar screenshots del flujo principal

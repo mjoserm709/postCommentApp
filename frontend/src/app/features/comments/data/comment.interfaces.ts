@@ -1,3 +1,5 @@
+import { ApiResponse } from '../../../core/models/api-response';
+
 export interface PostComment {
   _id: string;
   postId: string;
@@ -7,12 +9,13 @@ export interface PostComment {
   author?: {
     username: string;
     firstName: string;
-    lastName: string;
+      lastName: string;
   };
 }
 
-export interface ApiResponse<T> {
-  statusCode: number;
-  message: string;
-  data: T;
+export interface DeleteCommentResult {
+  _id: string;
+  deleted: boolean;
 }
+
+export type CommentsApiResponse<T> = ApiResponse<T>;

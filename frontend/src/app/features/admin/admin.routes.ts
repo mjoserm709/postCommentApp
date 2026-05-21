@@ -69,6 +69,6 @@ export const ADMIN_ROUTES: Routes = [
     canActivate: [permissionGuard],
     data: { permission: 'posts.read' },
     loadComponent: () =>
-      import('../posts/components/posts-admin.component').then((m) => m.PostsAdminComponent),
+      import('../posts/pages/posts-list.page').then((m) => m.PostsListPage),
   },
 ];

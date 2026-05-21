@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
-import { ApiResponse, BulkCreatePostsPayload, CreatePostPayload, Post } from '../data/post.interfaces';
+import { Observable, delay, retry, tap } from 'rxjs';
+import { BulkCreatePostsPayload, BulkCreatePostsResult, CreatePostPayload, Post, PostsApiResponse } from '../data/post.interfaces';
 
 @Injectable({
   providedIn: 'root',
@@ -10,39 +10,33 @@ export class PostsService {
   private http = inject(HttpClient);
   private apiUrl = 'http://localhost:3000/posts';
 
-  getPosts(): Observable<ApiResponse<Post[]>> {
-    return this.http.get<ApiResponse<Post[]>>(this.apiUrl).pipe(
-      catchError((error) => {
-        console.error('Error fetching posts', error);
-        return throwError(() => error);
-      }),
+  getPosts(): Observable<PostsApiResponse<Post[]>> {
+    return this.http.get<PostsApiResponse<Post[]>>(this.apiUrl).pipe(
+      delay(150),
+      retry({ count: 1, delay: 250 }),
+      tap(() => undefined),
     );
   }
 
-  getPublishedByCategory(categorySlug: string): Observable<ApiResponse<Post[]>> {
-    return this.http.get<ApiResponse<Post[]>>(`${this.apiUrl}/category/${categorySlug}`).pipe(
-      catchError((error) => {
-        console.error('Error fetching category posts', error);
-        return throwError(() => error);
-      }),
+  getPublishedByCategory(categorySlug: string): Observable<PostsApiResponse<Post[]>> {
+    return this.http.get<PostsApiResponse<Post[]>>(`${this.apiUrl}/category/${categorySlug}`).pipe(
+      delay(150),
     );
   }
 
-  createPost(payload: CreatePostPayload): Observable<ApiResponse<Post>> {
-    return this.http.post<ApiResponse<Post>>(this.apiUrl, payload).pipe(
-      catchError((error) => {
-        console.error('Error creating post', error);
-        return throwError(() => error);
-      }),
-    );
+  createPost(payload: CreatePostPayload): Observable<PostsApiResponse<Post>> {
+    return this.http.post<PostsApiResponse<Post>>(this.apiUrl, payload);
   }
 
-  createBulk(payload: BulkCreatePostsPayload): Observable<ApiResponse<Post[]>> {
-    return this.http.post<ApiResponse<Post[]>>(`${this.apiUrl}/bulk`, payload).pipe(
-      catchError((error) => {
-        console.error('Error importing posts', error);
-        return throwError(() => error);
-      }),
-    );
+  createBulk(payload: BulkCreatePostsPayload): Observable<PostsApiResponse<BulkCreatePostsResult>> {
+    return this.http.post<PostsApiResponse<BulkCreatePostsResult>>(`${this.apiUrl}/bulk`, payload);
+  }
+
+  updatePost(id: string, payload: Partial<CreatePostPayload>): Observable<PostsApiResponse<Post>> {
+    return this.http.put<PostsApiResponse<Post>>(`${this.apiUrl}/${id}`, payload);
+  }
+
+  deletePost(id: string): Observable<PostsApiResponse<Post>> {
+    return this.http.delete<PostsApiResponse<Post>>(`${this.apiUrl}/${id}`);
   }
 }

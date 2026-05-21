@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -45,7 +45,7 @@ export class PostsController {
     return this.postsService.createBulk(bulkCreatePostsDto, (request.user as any)?.userId);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('posts.update')
   update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {

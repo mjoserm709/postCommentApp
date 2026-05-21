@@ -54,7 +54,13 @@ export class PostsService {
       bulkImportId: importId,
     }));
 
-    return this.postModel.insertMany(posts);
+    const createdPosts = await this.postModel.insertMany(posts);
+
+    return {
+      importId,
+      count: createdPosts.length,
+      posts: createdPosts,
+    };
   }
 
   async update(id: string, updatePostDto: UpdatePostDto) {

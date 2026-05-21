@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  MinLength,
 } from 'class-validator';
 import { PostStatus } from '../schemas/post.schema';
 
@@ -15,26 +16,31 @@ export class CreatePostDto {
   @ApiProperty({ example: 'Mi primer post' })
   @IsNotEmpty()
   @IsString()
+  @MinLength(3)
   title!: string;
 
   @ApiProperty({ example: 'mi-primer-post' })
   @IsNotEmpty()
   @IsString()
+  @MinLength(3)
   slug!: string;
 
   @ApiProperty({ example: 'Resumen corto del post.' })
   @IsNotEmpty()
   @IsString()
+  @MinLength(10)
   excerpt!: string;
 
   @ApiProperty({ example: 'Contenido completo del post.' })
   @IsNotEmpty()
   @IsString()
+  @MinLength(20)
   content!: string;
 
   @ApiProperty({ example: 'terror' })
   @IsNotEmpty()
   @IsString()
+  @MinLength(3)
   categorySlug!: string;
 
   @ApiProperty({ example: ['cuento', 'suspenso'], required: false })

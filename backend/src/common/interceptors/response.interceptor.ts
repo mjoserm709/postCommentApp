@@ -1,17 +1,12 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { ApiResponse } from '../responses/api-response';
 import { HttpStatusMessages } from '../utils/http-status-messages.util';
 
-export interface Response<T> {
-  statusCode: number;
-  message: string;
-  data: T;
-}
-
 @Injectable()
-export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+export class ResponseInterceptor<T> implements NestInterceptor<T, ReturnType<typeof ApiResponse.success<T>>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<ReturnType<typeof ApiResponse.success<T>>> {
     const ctx = context.switchToHttp();
     const response = ctx.getResponse();
     
@@ -19,12 +14,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
       map(data => {
         const statusCode = response.statusCode;
         const message = HttpStatusMessages[statusCode] || 'Success';
-
-        return {
-          statusCode,
-          message,
-          data,
-        };
+        return ApiResponse.success(message, data);
       }),
     );
   }

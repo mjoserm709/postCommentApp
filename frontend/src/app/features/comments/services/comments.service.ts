@@ -1,30 +1,24 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
-import { ApiResponse, PostComment } from '../data/comment.interfaces';
+import { Observable } from 'rxjs';
+import { CommentsApiResponse, DeleteCommentResult, PostComment } from '../data/comment.interfaces';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CommentsService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/posts';
+  private apiUrl = 'http://localhost:3000/comments';
 
-  getComments(postId: string): Observable<ApiResponse<PostComment[]>> {
-    return this.http.get<ApiResponse<PostComment[]>>(`${this.apiUrl}/${postId}/comments`).pipe(
-      catchError((error) => {
-        console.error('Error fetching comments', error);
-        return throwError(() => error);
-      }),
-    );
+  getComments(postId: string): Observable<CommentsApiResponse<PostComment[]>> {
+    return this.http.get<CommentsApiResponse<PostComment[]>>(`${this.apiUrl}?postId=${postId}`);
   }
 
-  createComment(postId: string, content: string): Observable<ApiResponse<PostComment>> {
-    return this.http.post<ApiResponse<PostComment>>(`${this.apiUrl}/${postId}/comments`, { content }).pipe(
-      catchError((error) => {
-        console.error('Error creating comment', error);
-        return throwError(() => error);
-      }),
-    );
+  createComment(postId: string, content: string): Observable<CommentsApiResponse<PostComment>> {
+    return this.http.post<CommentsApiResponse<PostComment>>(this.apiUrl, { postId, content });
+  }
+
+  deleteComment(id: string): Observable<CommentsApiResponse<DeleteCommentResult>> {
+    return this.http.delete<CommentsApiResponse<DeleteCommentResult>>(`${this.apiUrl}/${id}`);
   }
 }

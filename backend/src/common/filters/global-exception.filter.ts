@@ -1,5 +1,13 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
+import { ApiResponse } from '../responses/api-response';
 import { HttpStatusMessages } from '../utils/http-status-messages.util';
 
 @Catch()
@@ -9,41 +17,90 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const { status, message, errorCode, details } = this.normalizeException(exception);
 
-    const exceptionResponse =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : null;
+    response.status(status).json(
+      ApiResponse.error(message, {
+        code: errorCode,
+        details: {
+          path: request.url,
+          method: request.method,
+          timestamp: new Date().toISOString(),
+          ...details,
+        },
+      }),
+    );
+  }
 
-    let customMessage = 'Internal Server Error';
-    if (exceptionResponse && typeof exceptionResponse === 'object' && 'message' in exceptionResponse) {
-      customMessage = (exceptionResponse as any).message;
-      if (Array.isArray(customMessage)) {
-        customMessage = customMessage.join(', ');
+  private normalizeException(exception: unknown) {
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      const exceptionResponse = exception.getResponse();
+
+      if (typeof exceptionResponse === 'string') {
+        return {
+          status,
+          message: exceptionResponse,
+          errorCode: HttpStatusMessages[status] || 'HTTP_ERROR',
+          details: undefined,
+        };
       }
-    } else if (typeof exceptionResponse === 'string') {
-      customMessage = exceptionResponse;
-    } else if (exception instanceof Error) {
-      customMessage = exception.message;
+
+      if (exceptionResponse && typeof exceptionResponse === 'object') {
+        const payload = exceptionResponse as Record<string, unknown>;
+        const rawMessage = payload.message ?? exception.message;
+        const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : String(rawMessage);
+
+        return {
+          status,
+          message,
+          errorCode: String(payload.error ?? HttpStatusMessages[status] ?? 'HTTP_ERROR'),
+          details: Array.isArray(rawMessage) ? { validationErrors: rawMessage } : undefined,
+        };
+      }
     }
 
-    const reasonText = HttpStatusMessages[status] || 'Unknown Error';
-    
-    // Extract service from URL (e.g., /api/users -> users)
-    const urlParts = request.url.split('/').filter(Boolean);
-    const serviceName = urlParts.length > 0 ? urlParts[0].toUpperCase() : 'API';
+    if (exception instanceof mongoose.Error.ValidationError) {
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Mongo validation error',
+        errorCode: 'MONGO_VALIDATION_ERROR',
+        details: Object.values(exception.errors).map((error) => error.message),
+      };
+    }
 
-    response.status(status).json({
-      reason: reasonText,
-      code: status,
-      path: request.url,
-      timestamp: new Date().toISOString(),
-      message: customMessage,
-      service: serviceName,
-    });
+    if (exception instanceof mongoose.Error.CastError) {
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        message: `Invalid ${exception.path}`,
+        errorCode: 'MONGO_CAST_ERROR',
+        details: { value: exception.value },
+      };
+    }
+
+    if (exception && typeof exception === 'object' && 'code' in exception && (exception as any).code === 11000) {
+      return {
+        status: HttpStatus.CONFLICT,
+        message: 'Duplicate key error',
+        errorCode: 'MONGO_DUPLICATE_KEY',
+        details: (exception as any).keyValue,
+      };
+    }
+
+    if (exception instanceof Error) {
+      return {
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: exception.message || 'Internal Server Error',
+        errorCode: 'INTERNAL_SERVER_ERROR',
+        details: undefined,
+      };
+    }
+
+    return {
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Internal Server Error',
+      errorCode: 'INTERNAL_SERVER_ERROR',
+      details: undefined,
+    };
   }
 }

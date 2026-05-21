@@ -420,7 +420,7 @@ export class PostsAdminComponent implements OnInit {
     }).subscribe({
       next: (response) => {
         this.isImporting.set(false);
-        this.toast.success(`${response.data.length} posts importados correctamente.`);
+        this.toast.success(`${response.data.count} posts importados correctamente.`);
         this.loadPosts();
       },
       error: (err) => {

@@ -1,3 +1,5 @@
+import { ApiResponse } from '../../../core/models/api-response';
+
 export type PostStatus = 'draft' | 'published' | 'archived';
 
 export interface Post {
@@ -34,8 +36,10 @@ export interface BulkCreatePostsPayload {
   posts: CreatePostPayload[];
 }
 
-export interface ApiResponse<T> {
-  statusCode: number;
-  message: string;
-  data: T;
+export interface BulkCreatePostsResult {
+  importId: string;
+  count: number;
+  posts: Post[];
 }
+
+export type PostsApiResponse<T> = ApiResponse<T>;

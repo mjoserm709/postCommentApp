@@ -1,16 +1,13 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, catchError, throwError } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { ApiResponse } from '../../../core/models/api-response';
 
-export interface AuthResponse {
-  statusCode: number;
-  message: string;
-  data: {
-    access_token: string;
-    user: any;
-  }
-}
+export interface AuthResponse extends ApiResponse<{
+  access_token: string;
+  user: any;
+}> {}
 
 @Injectable({
   providedIn: 'root'
@@ -31,21 +28,13 @@ export class AuthService {
           this.accessToken.set(response.data.access_token);
           this.currentUser.set(response.data.user);
         }
-      }),
-      catchError(error => {
-        console.error('Error in login', error);
-        return throwError(() => error);
       })
     );
   }
 
   register(userData: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/register`, userData).pipe(
-      tap(() => console.log('Registro exitoso')),
-      catchError(error => {
-        console.error('Error in register', error);
-        return throwError(() => error);
-      })
+      tap(() => console.log('Registro exitoso'))
     );
   }
 

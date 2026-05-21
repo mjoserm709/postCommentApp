@@ -16,6 +16,13 @@ export const ADMIN_ROUTES: Routes = [
       import('../users/components/users-list.component').then((m) => m.UsersListComponent),
   },
   {
+    path: 'users/edit/:id',
+    canActivate: [permissionGuard],
+    data: { permission: 'users.update' },
+    loadComponent: () =>
+      import('../users/components/user-edit.component').then((m) => m.UserEditComponent),
+  },
+  {
     path: 'roles',
     canActivate: [permissionGuard],
     data: { permission: 'roles.read' },

@@ -10,6 +10,16 @@ export interface User {
   createdAt: string;
 }
 
+export interface UpdateUserPayload {
+  username?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  roles?: string[];
+  isActive?: boolean;
+}
+
 export interface ApiResponse<T> {
   statusCode: number;
   message: string;

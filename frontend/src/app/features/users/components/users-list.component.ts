@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime, tap } from 'rxjs/operators';
 import { UsersService } from '../services/users.service';
@@ -11,7 +11,7 @@ import { AuthService } from '../../auth/services/auth.service';
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <div class="container mt-4">
       <div class="row mb-4">
@@ -54,11 +54,18 @@ import { AuthService } from '../../auth/services/auth.service';
                   </p>
                 </div>
                 <div class="card-footer bg-transparent">
-                  <small class="text-muted">Status:
-                    <span [class.text-success]="user.isActive" [class.text-danger]="!user.isActive">
-                      {{ user.isActive ? 'Activo' : 'Inactivo' }}
-                    </span>
-                  </small>
+                  <div class="d-flex justify-content-between align-items-center gap-2">
+                    <small class="text-muted">Status:
+                      <span [class.text-success]="user.isActive" [class.text-danger]="!user.isActive">
+                        {{ user.isActive ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </small>
+                    @if (authService.hasPermission('users.update')) {
+                      <a class="btn btn-sm btn-outline-primary" [routerLink]="['/admin/users/edit', user._id]">
+                        Editar
+                      </a>
+                    }
+                  </div>
                 </div>
               </div>
             </div>
@@ -75,7 +82,7 @@ import { AuthService } from '../../auth/services/auth.service';
 export class UsersListComponent implements OnInit {
   private usersService = inject(UsersService);
   private toast = inject(ToastService);
-  private authService = inject(AuthService);
+  authService = inject(AuthService);
   private router = inject(Router);
 
   // Signals

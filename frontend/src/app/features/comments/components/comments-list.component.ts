@@ -72,6 +72,21 @@ import { PostComment } from '../data/comment.interfaces';
       padding: 16px;
       text-align: center;
     }
+
+    @media (max-width: 720px) {
+      .comments-thread {
+        padding: 16px;
+      }
+
+      .message {
+        max-width: 100%;
+      }
+
+      .bubble-meta {
+        flex-direction: column;
+        gap: 4px;
+      }
+    }
   `],
 })
 export class CommentsListComponent {

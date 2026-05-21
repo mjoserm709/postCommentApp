@@ -35,6 +35,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
     @media (max-width: 720px) {
       .comment-compose {
         grid-template-columns: 1fr;
+        padding: 14px;
+      }
+
+      .comment-compose .btn {
+        width: 100%;
       }
     }
   `],

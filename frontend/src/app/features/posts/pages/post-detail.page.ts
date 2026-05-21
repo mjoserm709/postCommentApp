@@ -23,9 +23,9 @@ import { PostsService } from '../services/posts.service';
     <main class="category-page">
       <a routerLink="/" class="back-link">Volver a categorias</a>
 
-      <header class="category-header">
+      <header class="category-header app-page-header">
         <div>
-          <span class="eyebrow">Categoria</span>
+          <span class="app-eyebrow">Categoria</span>
           <h1>{{ categoryName }}</h1>
           <p>Lee publicaciones recientes y conversa con otros usuarios.</p>
         </div>
@@ -34,19 +34,19 @@ import { PostsService } from '../services/posts.service';
         }
       </header>
 
-      <section class="toolbar">
+      <section class="toolbar app-section-stack">
         <app-search-bar [value]="search()" (valueChange)="search.set($event)" />
       </section>
 
       @if (isLoading()) {
-        <div class="state-card">Cargando posts...</div>
+        <div class="state-card app-state-card">Cargando posts...</div>
       } @else if (!filteredPosts().length) {
-        <section class="state-card">
+        <section class="state-card app-state-card">
           <h2>Todavia no hay posts publicados</h2>
           <p>Cuando el admin publique contenido en esta categoria, aparecera aqui.</p>
         </section>
       } @else {
-        <section class="post-grid">
+        <section class="post-grid app-grid-posts">
           @for (post of filteredPosts(); track post._id) {
             <app-post-card [post]="post" (openComments)="openComments($event)" />
           }
@@ -55,7 +55,7 @@ import { PostsService } from '../services/posts.service';
     </main>
 
     @if (selectedPost(); as post) {
-      <div class="modal-backdrop-custom" (click)="closeComments()"></div>
+      <div class="app-modal-backdrop" (click)="closeComments()"></div>
       <section class="comments-modal" role="dialog" aria-modal="true" aria-labelledby="commentsTitle">
         <header class="comments-header">
           <div>
@@ -80,8 +80,8 @@ import { PostsService } from '../services/posts.service';
     }
 
     @if (isCreatePostModalOpen()) {
-      <div class="modal-backdrop-custom" (click)="closeCreatePostModal()"></div>
-      <section class="modal-shell">
+      <div class="app-modal-backdrop" (click)="closeCreatePostModal()"></div>
+      <section class="app-modal-shell">
         <app-post-form
           [categories]="categories()"
           [initialCategorySlug]="slug"
@@ -95,7 +95,7 @@ import { PostsService } from '../services/posts.service';
   `,
   styles: [`
     .category-page {
-      width: min(1180px, calc(100% - 32px));
+      width: var(--app-page-width);
       margin: 0 auto;
       padding: 34px 0 64px;
     }
@@ -106,21 +106,6 @@ import { PostsService } from '../services/posts.service';
       color: #0f766e;
       font-weight: 800;
       text-decoration: none;
-    }
-
-    .category-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      align-items: flex-start;
-      margin-bottom: 24px;
-    }
-
-    .eyebrow {
-      color: #0f766e;
-      font-size: 0.78rem;
-      font-weight: 900;
-      text-transform: uppercase;
     }
 
     h1 {
@@ -135,56 +120,18 @@ import { PostsService } from '../services/posts.service';
       font-size: 1.05rem;
     }
 
-    .toolbar,
-    .state-card {
-      margin-bottom: 18px;
-    }
-
-    .state-card {
-      padding: 24px;
-      border: 1px solid #d7dde7;
-      border-radius: 12px;
-      background: #fff;
-    }
-
-    .post-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 18px;
-    }
-
-    .modal-backdrop-custom {
-      position: fixed;
-      inset: 0;
-      z-index: 1040;
-      background: rgba(15, 23, 42, 0.56);
-    }
-
     .comments-modal {
       position: fixed;
-      top: 32px;
-      right: 16px;
-      bottom: 32px;
-      left: 16px;
+      inset: 32px 16px;
       z-index: 1050;
       display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
-      width: min(760px, calc(100% - 32px));
+      width: min(760px, 100%);
       margin: 0 auto;
       overflow: hidden;
       border-radius: 12px;
       background: #fff;
       box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
-    }
-
-    .modal-shell {
-      position: fixed;
-      inset: 32px 16px;
-      z-index: 1050;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      overflow-y: auto;
     }
 
     .comments-header {
@@ -214,12 +161,26 @@ import { PostsService } from '../services/posts.service';
     }
 
     @media (max-width: 720px) {
-      .category-header {
-        flex-direction: column;
+      .category-page {
+        padding: 20px 0 40px;
       }
 
-      .post-grid {
-        grid-template-columns: 1fr;
+      h1 {
+        font-size: 2rem;
+      }
+
+      .comments-modal {
+        inset: 10px 8px;
+        width: auto;
+        border-radius: 10px;
+      }
+
+      .comments-header {
+        padding: 16px;
+      }
+
+      .comments-header h2 {
+        font-size: 1.2rem;
       }
     }
   `],

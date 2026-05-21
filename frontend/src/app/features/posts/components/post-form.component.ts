@@ -56,7 +56,7 @@ import { CreatePostPayload, PostStatus } from '../data/post.interfaces';
         <div class="error-box">Revisa los campos obligatorios. El resumen y contenido deben tener una longitud minima valida.</div>
       }
 
-      <div class="modal-actions">
+      <div class="modal-actions app-form-actions">
         <button class="btn btn-outline-secondary" type="button" (click)="cancel.emit()">Cancelar</button>
         <button class="btn btn-primary" type="submit" [disabled]="isSubmitting || form.invalid">
           {{ isSubmitting ? 'Guardando...' : submitLabel }}
@@ -66,17 +66,12 @@ import { CreatePostPayload, PostStatus } from '../data/post.interfaces';
   `,
   styles: [`
     .post-form {
+      width: min(760px, 100%);
       padding: 22px;
-      border: 1px solid #d7dde7;
+      border: 1px solid var(--app-border);
       border-radius: 12px;
-      background: #fff;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 22px;
+      background: var(--app-surface);
+      box-shadow: var(--app-shadow-modal);
     }
 
     .error-box {
@@ -87,6 +82,12 @@ import { CreatePostPayload, PostStatus } from '../data/post.interfaces';
       color: #b91c1c;
       font-size: 0.92rem;
       font-weight: 600;
+    }
+
+    @media (max-width: 720px) {
+      .post-form {
+        padding: 18px;
+      }
     }
   `],
 })

@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ToastService } from '../../../shared/components/toast/toast.service';
@@ -14,10 +14,10 @@ import { PostsService } from '../services/posts.service';
 @Component({
   selector: 'app-posts-list-page',
   standalone: true,
-  imports: [FormsModule, SearchBarComponent, PostCardComponent, PostFormComponent],
+  imports: [ReactiveFormsModule, SearchBarComponent, PostCardComponent, PostFormComponent],
   template: `
     <main class="posts-page">
-      <header class="posts-header">
+      <header class="posts-header app-page-header">
         <div>
           <h1>Posts</h1>
           <p>Gestiona publicaciones y prepara lotes de carga masiva.</p>
@@ -25,33 +25,37 @@ import { PostsService } from '../services/posts.service';
         <button class="btn btn-primary" type="button" (click)="isCreateModalOpen.set(true)">Nuevo post</button>
       </header>
 
-      <section class="toolbar">
+      <section class="toolbar app-section-stack">
         <app-search-bar [value]="search()" (valueChange)="search.set($event)" />
       </section>
 
-      <section class="bulk-panel">
+      <form class="bulk-panel app-surface-card app-section-stack" [formGroup]="bulkForm" (ngSubmit)="importBulk()">
         <div>
           <h2>Carga masiva</h2>
           <p>Pega un arreglo JSON de posts. Cada item debe incluir titulo, slug, resumen, contenido y categoria.</p>
         </div>
 
         <label class="form-label">ID del lote</label>
-        <input class="form-control" [(ngModel)]="bulkImportId" name="bulkImportId" placeholder="lote-mayo-2026">
+        <input class="form-control" formControlName="importId" placeholder="lote-mayo-2026">
 
         <label class="form-label mt-3">JSON de posts</label>
-        <textarea class="form-control code-box" rows="10" [(ngModel)]="bulkJson" name="bulkJson"></textarea>
+        <textarea class="form-control code-box" rows="10" formControlName="postsJson"></textarea>
 
-        <button class="btn btn-outline-primary mt-3" type="button" [disabled]="isImporting()" (click)="importBulk()">
+        @if (bulkForm.controls.postsJson.invalid && bulkForm.controls.postsJson.touched) {
+          <small class="app-error-copy">Debes ingresar un JSON con al menos un post.</small>
+        }
+
+        <button class="btn btn-outline-primary mt-3" type="submit" [disabled]="isImporting() || bulkForm.invalid">
           {{ isImporting() ? 'Importando...' : 'Importar posts' }}
         </button>
-      </section>
+      </form>
 
       @if (isLoading()) {
-        <div class="state-card">Cargando posts...</div>
+        <div class="state-card app-state-card">Cargando posts...</div>
       } @else if (!filteredPosts().length) {
-        <div class="state-card">No hay posts que coincidan con la busqueda.</div>
+        <div class="state-card app-state-card">No hay posts que coincidan con la busqueda.</div>
       } @else {
-        <section class="post-grid">
+        <section class="post-grid app-grid-posts">
           @for (post of filteredPosts(); track post._id) {
             <app-post-card
               [post]="post"
@@ -64,8 +68,8 @@ import { PostsService } from '../services/posts.service';
       }
 
       @if (isCreateModalOpen()) {
-        <div class="modal-backdrop-custom" (click)="closeCreateModal()"></div>
-        <section class="modal-shell">
+        <div class="app-modal-backdrop" (click)="closeCreateModal()"></div>
+        <section class="app-modal-shell">
           <app-post-form
             [categories]="categories()"
             [isSubmitting]="isSaving()"
@@ -79,17 +83,9 @@ import { PostsService } from '../services/posts.service';
   `,
   styles: [`
     .posts-page {
-      width: min(1180px, calc(100% - 32px));
+      width: var(--app-page-width);
       margin: 0 auto;
       padding: 32px 0 56px;
-    }
-
-    .posts-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: center;
-      margin-bottom: 22px;
     }
 
     .posts-header h1 {
@@ -103,49 +99,28 @@ import { PostsService } from '../services/posts.service';
       color: #64748b;
     }
 
-    .toolbar,
-    .bulk-panel,
-    .state-card {
-      margin-bottom: 18px;
-    }
-
-    .bulk-panel,
-    .state-card {
-      padding: 22px;
-      border: 1px solid #d7dde7;
-      border-radius: 12px;
-      background: #fff;
-    }
-
     .code-box {
       font-family: Consolas, monospace;
+      min-height: 220px;
     }
 
-    .post-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
-      gap: 18px;
-    }
+    @media (max-width: 720px) {
+      .posts-page {
+        padding: 20px 0 40px;
+      }
 
-    .modal-backdrop-custom {
-      position: fixed;
-      inset: 0;
-      z-index: 1040;
-      background: rgba(15, 23, 42, 0.56);
-    }
+      .posts-header h1 {
+        font-size: 1.9rem;
+      }
 
-    .modal-shell {
-      position: fixed;
-      inset: 32px 16px;
-      z-index: 1050;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      overflow-y: auto;
+      .code-box {
+        min-height: 180px;
+      }
     }
   `],
 })
 export class PostsListPage implements OnInit {
+  private fb = inject(FormBuilder);
   private postsService = inject(PostsService);
   private categoriesService = inject(CategoriesService);
   private toast = inject(ToastService);
@@ -159,8 +134,10 @@ export class PostsListPage implements OnInit {
   isImporting = signal(false);
   isCreateModalOpen = signal(false);
 
-  bulkImportId = '';
-  bulkJson = `[
+  bulkForm = this.fb.nonNullable.group({
+    importId: [''],
+    postsJson: [
+      `[
   {
     "title": "Ejemplo de post",
     "slug": "ejemplo-de-post",
@@ -171,7 +148,10 @@ export class PostsListPage implements OnInit {
     "status": "published",
     "commentsEnabled": true
   }
-]`;
+]`,
+      [Validators.required, Validators.minLength(10)],
+    ],
+  });
 
   filteredPosts = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -215,18 +195,29 @@ export class PostsListPage implements OnInit {
   }
 
   importBulk() {
+    if (this.bulkForm.invalid) {
+      this.bulkForm.markAllAsTouched();
+      return;
+    }
+
     let posts: CreatePostPayload[];
+    const raw = this.bulkForm.getRawValue();
 
     try {
-      posts = JSON.parse(this.bulkJson);
+      posts = JSON.parse(raw.postsJson);
     } catch {
       this.toast.error('El JSON no es valido.');
       return;
     }
 
+    if (!Array.isArray(posts) || posts.length === 0) {
+      this.toast.error('El JSON debe contener un arreglo con al menos un post.');
+      return;
+    }
+
     this.isImporting.set(true);
     this.postsService.createBulk({
-      importId: this.bulkImportId || undefined,
+      importId: raw.importId.trim() || undefined,
       posts,
     }).pipe(finalize(() => this.isImporting.set(false))).subscribe({
       next: (response) => {

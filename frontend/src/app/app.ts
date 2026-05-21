@@ -11,6 +11,15 @@ import { AuthService } from './features/auth/services/auth.service';
 })
 export class App {
   protected readonly title = signal('postCommentApp');
+  protected readonly isMobileMenuOpen = signal(false);
 
   constructor(protected authService: AuthService) {}
+
+  protected toggleMobileMenu() {
+    this.isMobileMenuOpen.update((value) => !value);
+  }
+
+  protected closeMobileMenu() {
+    this.isMobileMenuOpen.set(false);
+  }
 }

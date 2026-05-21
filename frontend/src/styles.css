@@ -1,1 +1,155 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --app-surface: #fff;
+  --app-surface-muted: #f8fafc;
+  --app-border: #d7dde7;
+  --app-border-soft: #e5e7eb;
+  --app-copy-muted: #64748b;
+  --app-copy-body: #475569;
+  --app-brand: #0f766e;
+  --app-danger: #b91c1c;
+  --app-shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
+  --app-shadow-modal: 0 24px 70px rgba(15, 23, 42, 0.28);
+  --app-radius: 12px;
+  --app-page-width: min(1180px, calc(100% - 32px));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(180deg, #f7fafc 0%, #eef6f7 100%);
+  color: #0f172a;
+}
+
+body {
+  min-width: 320px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+.app-page-shell {
+  width: var(--app-page-width);
+  margin: 0 auto;
+}
+
+.app-surface-card {
+  padding: 22px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-soft);
+}
+
+.app-state-card {
+  padding: 24px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  background: var(--app-surface);
+}
+
+.app-state-card p,
+.app-muted-copy {
+  color: var(--app-copy-body);
+}
+
+.app-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+  background: rgba(15, 23, 42, 0.56);
+}
+
+.app-modal-shell {
+  position: fixed;
+  inset: 32px 16px;
+  z-index: 1050;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.app-section-stack {
+  margin-bottom: 18px;
+}
+
+.app-page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.app-eyebrow {
+  color: var(--app-brand);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.app-error-copy {
+  margin-top: 8px;
+  color: var(--app-danger);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.app-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.app-grid-posts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+@media (max-width: 720px) {
+  .app-page-shell {
+    width: min(100%, calc(100% - 24px));
+  }
+
+  .app-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app-page-header .btn {
+    width: 100%;
+  }
+
+  .app-grid-posts {
+    grid-template-columns: 1fr;
+  }
+
+  .app-modal-shell {
+    inset: 12px 8px;
+  }
+
+  .app-surface-card,
+  .app-state-card {
+    padding: 18px;
+  }
+
+  .app-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .app-form-actions .btn {
+    width: 100%;
+  }
+}

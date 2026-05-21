@@ -1,60 +1,81 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
   <div class="container">
-    <a class="navbar-brand" routerLink="/">postCommentApp</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+    <a class="navbar-brand" routerLink="/" (click)="closeMobileMenu()">postCommentApp</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      aria-controls="navbarNav"
+      [attr.aria-expanded]="isMobileMenuOpen()"
+      aria-label="Abrir menu"
+      (click)="toggleMobileMenu()"
+    >
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            Categorías
-          </a>
-        </li>
-        @if (authService.canAccessAdmin()) {
+
+    <div class="navbar-collapse-shell" [class.is-open]="isMobileMenuOpen()">
+      <div class="navbar-collapse" id="navbarNav" [class.is-open]="isMobileMenuOpen()">
+        <ul class="navbar-nav me-auto">
           <li class="nav-item">
-            <a class="nav-link" routerLink="/admin" routerLinkActive="active">Admin</a>
+            <a
+              class="nav-link"
+              routerLink="/"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: true }"
+              (click)="closeMobileMenu()"
+            >
+              Categorias
+            </a>
           </li>
-          @if (authService.hasPermission('users.read')) {
+
+          @if (authService.canAccessAdmin()) {
             <li class="nav-item">
-              <a class="nav-link" routerLink="/admin/users" routerLinkActive="active">Usuarios</a>
+              <a class="nav-link" routerLink="/admin" routerLinkActive="active" (click)="closeMobileMenu()">Admin</a>
+            </li>
+
+            @if (authService.hasPermission('users.read')) {
+              <li class="nav-item">
+                <a class="nav-link" routerLink="/admin/users" routerLinkActive="active" (click)="closeMobileMenu()">Usuarios</a>
+              </li>
+            }
+
+            @if (authService.hasPermission('roles.read')) {
+              <li class="nav-item">
+                <a class="nav-link" routerLink="/admin/roles" routerLinkActive="active" (click)="closeMobileMenu()">Roles</a>
+              </li>
+            }
+
+            @if (authService.hasPermission('permissions.read')) {
+              <li class="nav-item">
+                <a class="nav-link" routerLink="/admin/permissions" routerLinkActive="active" (click)="closeMobileMenu()">Permisos</a>
+              </li>
+            }
+
+            @if (authService.hasPermission('posts.read')) {
+              <li class="nav-item">
+                <a class="nav-link" routerLink="/admin/posts" routerLinkActive="active" (click)="closeMobileMenu()">Posts</a>
+              </li>
+            }
+          }
+        </ul>
+
+        <ul class="navbar-nav">
+          @if (authService.isAuthenticated()) {
+            <li class="nav-item">
+              <button type="button" class="btn btn-link nav-link" (click)="closeMobileMenu(); authService.logout()">
+                Cerrar sesion
+              </button>
+            </li>
+          } @else {
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/auth/login" routerLinkActive="active" (click)="closeMobileMenu()">Login</a>
             </li>
           }
-          @if (authService.hasPermission('roles.read')) {
-            <li class="nav-item">
-              <a class="nav-link" routerLink="/admin/roles" routerLinkActive="active">Roles</a>
-            </li>
-          }
-          @if (authService.hasPermission('permissions.read')) {
-            <li class="nav-item">
-              <a class="nav-link" routerLink="/admin/permissions" routerLinkActive="active">Permisos</a>
-            </li>
-          }
-          @if (authService.hasPermission('posts.read')) {
-            <li class="nav-item">
-              <a class="nav-link" routerLink="/admin/posts" routerLinkActive="active">Posts</a>
-            </li>
-          }
-        }
-      </ul>
-      <ul class="navbar-nav">
-        @if (authService.isAuthenticated()) {
-          <li class="nav-item">
-            <button type="button" class="btn btn-link nav-link" (click)="authService.logout()">
-              Cerrar sesión
-            </button>
-          </li>
-        } @else {
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/auth/login" routerLinkActive="active">Login</a>
-          </li>
-        }
-      </ul>
+        </ul>
+      </div>
     </div>
   </div>
 </nav>
 
 <router-outlet></router-outlet>
 
-<!-- Toast global — renderizado una sola vez en el shell, disponible en toda la app -->
 <app-toast></app-toast>

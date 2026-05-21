@@ -1,3 +1,6 @@
+import { ApiResponse } from '../../../core/models/api-response';
+import { PaginatedResult } from '../../../core/models/pagination';
+
 export interface Category {
   _id: string;
   name: string;
@@ -8,8 +11,5 @@ export interface Category {
   isActive: boolean;
 }
 
-export interface ApiResponse<T> {
-  statusCode: number;
-  message: string;
-  data: T;
-}
+export type CategoriesApiResponse<T> = ApiResponse<T>;
+export type PaginatedCategories = PaginatedResult<Category>;

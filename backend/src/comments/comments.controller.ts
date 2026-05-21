@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -17,12 +18,14 @@ export class CommentsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   create(@Body() createCommentDto: CreateCommentRequestDto, @Req() request: Request) {
     return this.commentsService.create(createCommentDto.postId, createCommentDto, (request.user as any)?.userId);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   remove(@Param('id') id: string, @Req() request: Request) {
     return this.commentsService.remove(id, (request.user as any)?.userId);
   }
@@ -39,6 +42,7 @@ export class NestedCommentsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   createNested(
     @Param('postId') postId: string,
     @Body() createCommentDto: CreateCommentDto,

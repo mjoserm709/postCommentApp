@@ -10,9 +10,9 @@ export class ErrorService {
 
   handleHttpError(error: HttpErrorResponse, fallbackMessage = 'Ocurrio un error inesperado.'): string {
     const message =
-      error.error?.message ||
-      error.message ||
-      fallbackMessage;
+      error.status === 429
+        ? 'Has realizado demasiados intentos. Espera un momento e intenta de nuevo.'
+        : error.error?.message || error.message || fallbackMessage;
 
     this.toast.error(message);
     return message;

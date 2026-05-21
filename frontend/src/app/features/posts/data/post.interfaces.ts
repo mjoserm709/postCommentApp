@@ -1,4 +1,5 @@
 import { ApiResponse } from '../../../core/models/api-response';
+import { PaginatedResult } from '../../../core/models/pagination';
 
 export type PostStatus = 'draft' | 'published' | 'archived';
 
@@ -43,3 +44,4 @@ export interface BulkCreatePostsResult {
 }
 
 export type PostsApiResponse<T> = ApiResponse<T>;
+export type PaginatedPosts = PaginatedResult<Post>;

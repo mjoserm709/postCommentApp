@@ -1,4 +1,5 @@
 import { ApiResponse } from '../../../core/models/api-response';
+import { PaginatedResult } from '../../../core/models/pagination';
 
 export interface PostComment {
   _id: string;
@@ -19,3 +20,4 @@ export interface DeleteCommentResult {
 }
 
 export type CommentsApiResponse<T> = ApiResponse<T>;
+export type PaginatedComments = PaginatedResult<PostComment>;

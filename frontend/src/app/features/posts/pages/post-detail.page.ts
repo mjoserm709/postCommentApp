@@ -22,328 +22,57 @@ import { PostsService } from '../services/posts.service';
   template: `
     <main class="category-page">
       <a routerLink="/" class="back-link">Volver a categorias</a>
-
       <header class="category-header app-page-header">
-        <div>
-          <span class="app-eyebrow">Categoria</span>
-          <h1>{{ categoryName }}</h1>
-          <p>Lee publicaciones recientes y conversa con otros usuarios.</p>
-        </div>
-        @if (authService.hasPermission('posts.create')) {
-          <button class="btn btn-primary" type="button" (click)="openCreatePostModal()">Nuevo post</button>
-        }
+        <div><span class="app-eyebrow">Categoria</span><h1>{{ categoryName }}</h1><p>Lee publicaciones recientes y conversa con otros usuarios.</p></div>
+        @if (authService.hasPermission('posts.create')) { <button class="btn btn-primary" type="button" (click)="openCreatePostModal()">Nuevo post</button> }
       </header>
-
-      <section class="toolbar app-section-stack">
-        <app-search-bar [value]="search()" (valueChange)="search.set($event)" />
-      </section>
-
+      <section class="toolbar app-section-stack"><app-search-bar [value]="search()" (valueChange)="search.set($event)" /></section>
       @if (isLoading()) {
         <div class="state-card app-state-card">Cargando posts...</div>
       } @else if (!filteredPosts().length) {
-        <section class="state-card app-state-card">
-          <h2>Todavia no hay posts publicados</h2>
-          <p>Cuando el admin publique contenido en esta categoria, aparecera aqui.</p>
-        </section>
+        <section class="state-card app-state-card"><h2>Todavia no hay posts publicados</h2><p>Cuando el admin publique contenido en esta categoria, aparecera aqui.</p></section>
       } @else {
-        <section class="post-grid app-grid-posts">
-          @for (post of filteredPosts(); track post._id) {
-            <app-post-card [post]="post" (openComments)="openComments($event)" />
-          }
-        </section>
+        <section class="post-grid app-grid-posts">@for (post of filteredPosts(); track post._id) { <app-post-card [post]="post" (openComments)="openComments($event)" /> }</section>
+        @if (totalPages() > 1) { <div class="pager"><button class="btn btn-outline-secondary" type="button" [disabled]="page() === 1" (click)="changePage(page() - 1)">Anterior</button><span>Pagina {{ page() }} de {{ totalPages() }}</span><button class="btn btn-outline-secondary" type="button" [disabled]="page() === totalPages()" (click)="changePage(page() + 1)">Siguiente</button></div> }
       }
     </main>
 
     @if (selectedPost(); as post) {
       <div class="app-modal-backdrop" (click)="closeComments()"></div>
       <section class="comments-modal" role="dialog" aria-modal="true" aria-labelledby="commentsTitle">
-        <header class="comments-header">
-          <div>
-            <span>{{ post.status === publishedStatus ? 'Publicado' : 'Borrador' }}</span>
-            <h2 id="commentsTitle">{{ post.title }}</h2>
-          </div>
-          <button class="btn-close" type="button" aria-label="Cerrar" (click)="closeComments()"></button>
-        </header>
-
-        <app-comments-list
-          [comments]="postComments(post._id)"
-          [currentUserId]="currentUserId()"
-          [deleteComment]="deleteComment"
-        />
-
-        @if (post.commentsEnabled && authService.isAuthenticated()) {
-          <app-comment-form [isSubmitting]="isSubmittingComment()" (submitComment)="submitComment(post._id, $event)" />
-        } @else if (post.commentsEnabled) {
-          <div class="login-note">Inicia sesion para comentar.</div>
-        }
+        <header class="comments-header"><div><span>{{ post.status === publishedStatus ? 'Publicado' : 'Borrador' }}</span><h2 id="commentsTitle">{{ post.title }}</h2></div><button class="btn-close" type="button" aria-label="Cerrar" (click)="closeComments()"></button></header>
+        <app-comments-list [comments]="postComments()" [currentUserId]="currentUserId()" [deletingCommentIds]="deletingCommentIds()" [deleteComment]="deleteComment" />
+        @if (commentsTotalPages() > 1) { <div class="pager comments-pager"><button class="btn btn-outline-secondary btn-sm" type="button" [disabled]="commentsPage() === 1" (click)="changeCommentsPage(commentsPage() - 1)">Anterior</button><span>Comentarios {{ commentsPage() }} de {{ commentsTotalPages() }}</span><button class="btn btn-outline-secondary btn-sm" type="button" [disabled]="commentsPage() === commentsTotalPages()" (click)="changeCommentsPage(commentsPage() + 1)">Siguiente</button></div> }
+        @if (post.commentsEnabled && authService.isAuthenticated()) { <app-comment-form [isSubmitting]="isSubmittingComment()" (submitComment)="submitComment(post._id, $event)" /> } @else if (post.commentsEnabled) { <div class="login-note">Inicia sesion para comentar.</div> }
       </section>
     }
 
     @if (isCreatePostModalOpen()) {
       <div class="app-modal-backdrop" (click)="closeCreatePostModal()"></div>
-      <section class="app-modal-shell">
-        <app-post-form
-          [categories]="categories()"
-          [initialCategorySlug]="slug"
-          [isSubmitting]="isSavingPost()"
-          submitLabel="Crear post"
-          (save)="createPost($event)"
-          (cancel)="closeCreatePostModal()"
-        />
-      </section>
+      <section class="app-modal-shell"><app-post-form [categories]="categories()" [initialCategorySlug]="slug" [isSubmitting]="isSavingPost()" submitLabel="Crear post" (save)="createPost($event)" (cancel)="closeCreatePostModal()" /></section>
     }
   `,
-  styles: [`
-    .category-page {
-      width: var(--app-page-width);
-      margin: 0 auto;
-      padding: 34px 0 64px;
-    }
-
-    .back-link {
-      display: inline-block;
-      margin-bottom: 22px;
-      color: #0f766e;
-      font-weight: 800;
-      text-decoration: none;
-    }
-
-    h1 {
-      margin: 6px 0 8px;
-      font-size: 2.7rem;
-      line-height: 1;
-    }
-
-    .category-header p,
-    .state-card p {
-      color: #475569;
-      font-size: 1.05rem;
-    }
-
-    .comments-modal {
-      position: fixed;
-      inset: 32px 16px;
-      z-index: 1050;
-      display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto;
-      width: min(760px, 100%);
-      margin: 0 auto;
-      overflow: hidden;
-      border-radius: 12px;
-      background: #fff;
-      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
-    }
-
-    .comments-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      align-items: flex-start;
-      padding: 20px 22px;
-      border-bottom: 1px solid #e5e7eb;
-    }
-
-    .comments-header span,
-    .login-note {
-      color: #64748b;
-      font-size: 0.84rem;
-      font-weight: 700;
-    }
-
-    .comments-header h2 {
-      margin: 5px 0 0;
-      font-size: 1.45rem;
-    }
-
-    .login-note {
-      padding: 16px;
-      text-align: center;
-    }
-
-    @media (max-width: 720px) {
-      .category-page {
-        padding: 20px 0 40px;
-      }
-
-      h1 {
-        font-size: 2rem;
-      }
-
-      .comments-modal {
-        inset: 10px 8px;
-        width: auto;
-        border-radius: 10px;
-      }
-
-      .comments-header {
-        padding: 16px;
-      }
-
-      .comments-header h2 {
-        font-size: 1.2rem;
-      }
-    }
-  `],
+  styles: [`.category-page{width:var(--app-page-width);margin:0 auto;padding:34px 0 64px}.back-link{display:inline-block;margin-bottom:22px;color:#0f766e;font-weight:800;text-decoration:none}h1{margin:6px 0 8px;font-size:2.7rem;line-height:1}.category-header p,.state-card p{color:#475569;font-size:1.05rem}.comments-modal{position:fixed;inset:32px 16px;z-index:1050;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;width:min(760px,100%);margin:0 auto;overflow:hidden;border-radius:12px;background:#fff;box-shadow:0 24px 70px rgba(15,23,42,.28)}.comments-header{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;padding:20px 22px;border-bottom:1px solid #e5e7eb}.comments-header span,.login-note{color:#64748b;font-size:.84rem;font-weight:700}.comments-header h2{margin:5px 0 0;font-size:1.45rem}.login-note{text-align:center;padding:16px}.pager{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:22px}.comments-pager{padding:12px 16px;margin-top:0;border-top:1px solid #e5e7eb;background:#fff}@media (max-width:720px){.category-page{padding:20px 0 40px}h1{font-size:2rem}.comments-modal{inset:10px 8px;width:auto;border-radius:10px}.comments-header{padding:16px}.comments-header h2{font-size:1.2rem}}`],
 })
 export class PostDetailPage implements OnInit {
-  authService = inject(AuthService);
-  private route = inject(ActivatedRoute);
-  private postsService = inject(PostsService);
-  private commentsService = inject(CommentsService);
-  private categoriesService = inject(CategoriesService);
-  private toast = inject(ToastService);
-
-  readonly publishedStatus = 'published' as PostStatus;
-  readonly slug = this.route.snapshot.paramMap.get('slug') ?? '';
-
-  categories = signal<Category[]>([]);
-  posts = signal<Post[]>([]);
-  comments = signal<Record<string, PostComment[]>>({});
-  selectedPost = signal<Post | null>(null);
-  search = signal('');
-  isLoading = signal(false);
-  isCreatePostModalOpen = signal(false);
-  isSavingPost = signal(false);
-  isSubmittingComment = signal(false);
-  currentUserId = computed(() => {
-    const currentUser = this.authService.getCurrentUser();
-    return currentUser?._id || currentUser?.sub || currentUser?.userId || null;
-  });
-
-  filteredPosts = computed(() => {
-    const term = this.search().trim().toLowerCase();
-    const ordered = [...this.posts()].sort(
-      (a, b) =>
-        new Date(b.publishedAt || b.createdAt).getTime() -
-        new Date(a.publishedAt || a.createdAt).getTime(),
-    );
-
-    if (!term) {
-      return ordered;
-    }
-
-    return ordered.filter((post) =>
-      `${post.title} ${post.excerpt} ${post.tags.join(' ')}`.toLowerCase().includes(term),
-    );
-  });
-
-  readonly deleteComment = (id: string) => {
-    this.commentsService.deleteComment(id).subscribe({
-      next: () => {
-        const postId = this.selectedPost()?._id;
-        if (!postId) {
-          return;
-        }
-
-        this.comments.update((current) => ({
-          ...current,
-          [postId]: (current[postId] ?? []).filter((comment) => comment._id !== id),
-        }));
-        this.toast.success('Comentario eliminado.');
-      },
-    });
-  };
-
-  categoryName = this.slug
-    .split('-')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-
-  ngOnInit() {
-    this.loadCategories();
-    this.loadPosts();
-  }
-
-  loadCategories() {
-    this.categoriesService.getCategories().subscribe({
-      next: (response) => this.categories.set(response.data),
-    });
-  }
-
-  loadPosts() {
-    this.route.paramMap.pipe(
-      tap(() => this.isLoading.set(true)),
-      switchMap((params) => {
-        const slug = params.get('slug') ?? this.slug;
-        return this.postsService.getPublishedByCategory(slug).pipe(
-          delay(150),
-          tap((response) => {
-            this.posts.set(response.data);
-          }),
-          switchMap((response) => {
-            const postId = this.route.snapshot.queryParamMap.get('postId');
-            if (!postId) {
-              return of(response);
-            }
-
-            const post = response.data.find((item) => item._id === postId);
-            if (post) {
-              this.openComments(post);
-            }
-
-            return of(response);
-          }),
-          finalize(() => this.isLoading.set(false)),
-        );
-      }),
-    ).subscribe();
-  }
-
-  openComments(post: Post) {
-    this.selectedPost.set(post);
-    this.commentsService.getComments(post._id).subscribe({
-      next: (response) => {
-        this.comments.update((current) => ({ ...current, [post._id]: response.data }));
-      },
-    });
-  }
-
-  closeComments() {
-    this.selectedPost.set(null);
-  }
-
-  openCreatePostModal() {
-    this.isCreatePostModalOpen.set(true);
-  }
-
-  closeCreatePostModal() {
-    if (!this.isSavingPost()) {
-      this.isCreatePostModalOpen.set(false);
-    }
-  }
-
-  createPost(payload: CreatePostPayload) {
-    this.isSavingPost.set(true);
-    this.postsService.createPost({
-      ...payload,
-      categorySlug: this.slug,
-      status: payload.status ?? ('published' as PostStatus),
-    }).pipe(finalize(() => this.isSavingPost.set(false))).subscribe({
-      next: () => {
-        this.isCreatePostModalOpen.set(false);
-        this.toast.success('Post creado correctamente.');
-        this.postsService.getPublishedByCategory(this.slug).subscribe({
-          next: (response) => this.posts.set(response.data),
-        });
-      },
-    });
-  }
-
-  submitComment(postId: string, content: string) {
-    this.isSubmittingComment.set(true);
-    this.commentsService.createComment(postId, content).pipe(finalize(() => this.isSubmittingComment.set(false))).subscribe({
-      next: (response) => {
-        this.comments.update((current) => ({
-          ...current,
-          [postId]: [response.data, ...(current[postId] ?? [])],
-        }));
-        this.toast.success('Comentario agregado.');
-      },
-    });
-  }
-
-  postComments(postId: string): PostComment[] {
-    return this.comments()[postId] ?? [];
-  }
+  authService = inject(AuthService); private route = inject(ActivatedRoute); private postsService = inject(PostsService); private commentsService = inject(CommentsService); private categoriesService = inject(CategoriesService); private toast = inject(ToastService);
+  readonly publishedStatus = 'published' as PostStatus; readonly slug = this.route.snapshot.paramMap.get('slug') ?? '';
+  categories = signal<Category[]>([]); posts = signal<Post[]>([]); comments = signal<PostComment[]>([]); selectedPost = signal<Post | null>(null); search = signal(''); isLoading = signal(false); isCreatePostModalOpen = signal(false); isSavingPost = signal(false); isSubmittingComment = signal(false); deletingCommentIds = signal<string[]>([]); page = signal(1); totalPages = signal(1); commentsPage = signal(1); commentsTotalPages = signal(1); postLimit = 9; commentLimit = 10;
+  currentUserId = computed(() => { const currentUser = this.authService.getCurrentUser(); return currentUser?._id || currentUser?.sub || currentUser?.userId || null; });
+  filteredPosts = computed(() => { const term = this.search().trim().toLowerCase(); const ordered = [...this.posts()].sort((a, b) => new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime()); return !term ? ordered : ordered.filter((post) => `${post.title} ${post.excerpt} ${post.tags.join(' ')}`.toLowerCase().includes(term)); });
+  readonly deleteComment = (id: string) => { const confirmed = window.confirm('Vas a eliminar este comentario. Esta accion no se puede deshacer.'); if (!confirmed || this.deletingCommentIds().includes(id)) return; this.deletingCommentIds.update((current) => [...current, id]); this.commentsService.deleteComment(id).subscribe({ next: () => { this.comments.update((current) => current.filter((comment) => comment._id !== id)); this.toast.success('Comentario eliminado.'); }, error: () => this.deletingCommentIds.update((current) => current.filter((commentId) => commentId !== id)), complete: () => this.deletingCommentIds.update((current) => current.filter((commentId) => commentId !== id)) }); };
+  categoryName = this.slug.split('-').filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+  ngOnInit() { this.loadCategories(); this.loadPosts(); }
+  loadCategories() { this.categoriesService.getCategories(1, 50).subscribe({ next: (response) => this.categories.set(response.data.items) }); }
+  loadPosts() { this.route.paramMap.pipe(tap(() => this.isLoading.set(true)), switchMap((params) => { const slug = params.get('slug') ?? this.slug; return this.postsService.getPublishedByCategory(slug, this.page(), this.postLimit).pipe(delay(150), tap((response) => { this.posts.set(response.data.items); this.totalPages.set(response.data.totalPages); }), switchMap((response) => { const postId = this.route.snapshot.queryParamMap.get('postId'); if (!postId) return of(response); const post = response.data.items.find((item: Post) => item._id === postId); if (post) this.openComments(post); return of(response); }), finalize(() => this.isLoading.set(false))); })).subscribe(); }
+  changePage(nextPage: number) { this.page.set(nextPage); this.loadPosts(); }
+  openComments(post: Post) { this.selectedPost.set(post); this.commentsPage.set(1); this.loadComments(post._id); }
+  loadComments(postId: string) { this.commentsService.getComments(postId, this.commentsPage(), this.commentLimit).subscribe({ next: (response) => { this.comments.set(response.data.items); this.commentsTotalPages.set(response.data.totalPages); } }); }
+  changeCommentsPage(nextPage: number) { const postId = this.selectedPost()?._id; if (!postId) return; this.commentsPage.set(nextPage); this.loadComments(postId); }
+  closeComments() { this.selectedPost.set(null); this.comments.set([]); }
+  openCreatePostModal() { this.isCreatePostModalOpen.set(true); }
+  closeCreatePostModal() { if (!this.isSavingPost()) this.isCreatePostModalOpen.set(false); }
+  createPost(payload: CreatePostPayload) { this.isSavingPost.set(true); this.postsService.createPost({ ...payload, categorySlug: this.slug, status: payload.status ?? ('published' as PostStatus) }).pipe(finalize(() => this.isSavingPost.set(false))).subscribe({ next: () => { this.isCreatePostModalOpen.set(false); this.toast.success('Post creado correctamente.'); this.loadPosts(); } }); }
+  submitComment(postId: string, content: string) { this.isSubmittingComment.set(true); this.commentsService.createComment(postId, content).pipe(finalize(() => this.isSubmittingComment.set(false))).subscribe({ next: () => { this.commentsPage.set(1); this.loadComments(postId); this.toast.success('Comentario agregado.'); } }); }
+  postComments(): PostComment[] { return this.comments(); }
 }

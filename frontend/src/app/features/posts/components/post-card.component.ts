@@ -31,7 +31,9 @@ import { Post } from '../data/post.interfaces';
         <div class="actions">
           <button class="btn btn-sm btn-primary" type="button" (click)="openComments.emit(post)">Comentarios</button>
           @if (showDelete) {
-            <button class="btn btn-sm btn-outline-danger" type="button" (click)="deletePost.emit(post)">Eliminar</button>
+            <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="isDeleting" (click)="deletePost.emit(post)">
+              {{ isDeleting ? 'Eliminando...' : 'Eliminar' }}
+            </button>
           }
         </div>
       </div>
@@ -120,6 +122,7 @@ import { Post } from '../data/post.interfaces';
 export class PostCardComponent {
   @Input({ required: true }) post!: Post;
   @Input() showDelete = false;
+  @Input() isDeleting = false;
   @Output() openComments = new EventEmitter<Post>();
   @Output() deletePost = new EventEmitter<Post>();
 }

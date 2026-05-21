@@ -17,7 +17,9 @@ import { PostComment } from '../data/comment.interfaces';
             </div>
             <p>{{ comment.content }}</p>
             @if (canDelete(comment)) {
-              <button class="btn btn-link btn-sm px-0" type="button" (click)="onDelete(comment._id)">Eliminar</button>
+              <button class="btn btn-link btn-sm px-0" type="button" [disabled]="isDeleting(comment._id)" (click)="onDelete(comment._id)">
+                {{ isDeleting(comment._id) ? 'Eliminando...' : 'Eliminar' }}
+              </button>
             }
           </div>
         </article>
@@ -93,6 +95,7 @@ export class CommentsListComponent {
   @Input() comments: PostComment[] = [];
   @Input() currentUserId: string | null = null;
   @Input() deleteComment: (id: string) => void = () => undefined;
+  @Input() deletingCommentIds: string[] = [];
 
   authorName(comment: PostComment): string {
     if (!comment.author) {
@@ -108,5 +111,9 @@ export class CommentsListComponent {
 
   onDelete(id: string) {
     this.deleteComment(id);
+  }
+
+  isDeleting(id: string) {
+    return this.deletingCommentIds.includes(id);
   }
 }

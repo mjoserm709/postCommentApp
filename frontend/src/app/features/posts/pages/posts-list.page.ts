@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { AppModalComponent } from '../../../shared/components/app-modal/app-modal.component';
+import { AuthService } from '../../auth/services/auth.service';
 import { CategoriesService } from '../../categories/services/categories.service';
 import { Category } from '../../categories/data/category.interfaces';
 import { PostCardComponent } from '../components/post-card.component';
@@ -34,27 +35,31 @@ interface ExcelPostRow {
     <main class="posts-page">
       <header class="posts-header app-page-header">
         <div><h1>Posts</h1><p>Gestiona publicaciones y prepara lotes de carga masiva.</p></div>
-        <button class="btn btn-primary" type="button" (click)="isCreateModalOpen.set(true)">Nuevo post</button>
+        @if (authService.hasPermission('posts.create')) {
+          <button class="btn btn-primary" type="button" (click)="isCreateModalOpen.set(true)">Nuevo post</button>
+        }
       </header>
 
       <section class="toolbar app-section-stack">
         <app-search-bar [value]="search()" (valueChange)="search.set($event)" />
       </section>
 
-      <div class="bulk-panel app-surface-card app-section-stack">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-          <div><h2>Carga masiva por Excel</h2><p>Sube un archivo .xlsx para crear multiples posts.</p></div>
-          <button class="btn btn-outline-secondary btn-sm" type="button" (click)="downloadTemplate()">Descargar plantilla</button>
+      @if (authService.hasPermission('posts.create')) {
+        <div class="bulk-panel app-surface-card app-section-stack">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div><h2>Carga masiva por Excel</h2><p>Sube un archivo .xlsx para crear multiples posts.</p></div>
+            <button class="btn btn-outline-secondary btn-sm" type="button" (click)="downloadTemplate()">Descargar plantilla</button>
+          </div>
+          <form [formGroup]="bulkForm" (ngSubmit)="importBulk()">
+            <label class="form-label">ID del lote (Opcional)</label>
+            <input class="form-control mb-3" formControlName="importId" placeholder="ej. lote-mayo-2026">
+            <label class="form-label">Archivo de Excel (.xlsx, .csv)</label>
+            <input class="form-control" type="file" accept=".xlsx, .csv" (change)="onFileChange($event)" #fileInput>
+            @if (excelPosts().length > 0) { <div class="mt-2 text-success"><small>Archivo listo: {{ excelPosts().length }} posts detectados.</small></div> }
+            <button class="btn btn-primary mt-3" type="submit" [disabled]="isImporting() || excelPosts().length === 0">{{ isImporting() ? 'Importando...' : 'Importar posts' }}</button>
+          </form>
         </div>
-        <form [formGroup]="bulkForm" (ngSubmit)="importBulk()">
-          <label class="form-label">ID del lote (Opcional)</label>
-          <input class="form-control mb-3" formControlName="importId" placeholder="ej. lote-mayo-2026">
-          <label class="form-label">Archivo de Excel (.xlsx, .csv)</label>
-          <input class="form-control" type="file" accept=".xlsx, .csv" (change)="onFileChange($event)" #fileInput>
-          @if (excelPosts().length > 0) { <div class="mt-2 text-success"><small>Archivo listo: {{ excelPosts().length }} posts detectados.</small></div> }
-          <button class="btn btn-primary mt-3" type="submit" [disabled]="isImporting() || excelPosts().length === 0">{{ isImporting() ? 'Importando...' : 'Importar posts' }}</button>
-        </form>
-      </div>
+      }
 
       @if (isLoading()) {
         <div class="state-card app-state-card">Cargando posts...</div>
@@ -63,7 +68,7 @@ interface ExcelPostRow {
       } @else {
         <section class="post-grid app-grid-posts">
           @for (post of filteredPosts(); track post._id) {
-            <app-post-card [post]="post" [showDelete]="true" [isDeleting]="deletingPostIds().includes(post._id)" (openComments)="openComments($event)" (deletePost)="deletePost($event)" />
+            <app-post-card [post]="post" [showDelete]="authService.hasPermission('posts.delete')" [isDeleting]="deletingPostIds().includes(post._id)" (openComments)="openComments($event)" (deletePost)="deletePost($event)" />
           }
         </section>
         @if (totalPages() > 1) {
@@ -92,6 +97,7 @@ interface ExcelPostRow {
 })
 export class PostsListPage implements OnInit {
   private fb = inject(FormBuilder); private postsService = inject(PostsService); private categoriesService = inject(CategoriesService); private toast = inject(ToastService); private router = inject(Router);
+  authService = inject(AuthService);
   posts = signal<Post[]>([]); categories = signal<Category[]>([]); search = signal(''); isLoading = signal(false); isSaving = signal(false); isImporting = signal(false); isCreateModalOpen = signal(false); deletingPostIds = signal<string[]>([]); page = signal(1); totalPages = signal(1); limit = 12; excelPosts = signal<CreatePostPayload[]>([]);
   bulkForm = this.fb.nonNullable.group({ importId: [''] });
   filteredPosts = computed(() => { const term = this.search().trim().toLowerCase(); const posts = this.posts(); return !term ? posts : posts.filter((post) => `${post.title} ${post.excerpt} ${post.tags.join(' ')}`.toLowerCase().includes(term)); });

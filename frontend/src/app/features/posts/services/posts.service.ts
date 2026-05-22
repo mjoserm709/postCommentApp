@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, delay, retry, tap } from 'rxjs';
+import { RuntimeConfigService } from '../../../core/services/runtime-config.service';
 import {
   BulkCreatePostsPayload,
   BulkCreatePostsResult,
@@ -15,7 +16,11 @@ import {
 })
 export class PostsService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/posts';
+  private runtimeConfig = inject(RuntimeConfigService);
+
+  private get apiUrl() {
+    return `${this.runtimeConfig.apiBaseUrl}/posts`;
+  }
 
   getPosts(page = 1, limit = 12): Observable<PostsApiResponse<PaginatedPosts>> {
     return this.http.get<PostsApiResponse<PaginatedPosts>>(`${this.apiUrl}?page=${page}&limit=${limit}`).pipe(

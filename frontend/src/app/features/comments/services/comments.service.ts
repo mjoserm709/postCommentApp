@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { RuntimeConfigService } from '../../../core/services/runtime-config.service';
 import { CommentsApiResponse, DeleteCommentResult, PaginatedComments, PostComment } from '../data/comment.interfaces';
 
 @Injectable({
@@ -8,7 +9,11 @@ import { CommentsApiResponse, DeleteCommentResult, PaginatedComments, PostCommen
 })
 export class CommentsService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/comments';
+  private runtimeConfig = inject(RuntimeConfigService);
+
+  private get apiUrl() {
+    return `${this.runtimeConfig.apiBaseUrl}/comments`;
+  }
 
   getComments(postId: string, page = 1, limit = 10): Observable<CommentsApiResponse<PaginatedComments>> {
     return this.http.get<CommentsApiResponse<PaginatedComments>>(`${this.apiUrl}?postId=${postId}&page=${page}&limit=${limit}`);

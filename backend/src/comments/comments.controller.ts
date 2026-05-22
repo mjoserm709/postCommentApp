@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } fro
 import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateCommentRequestDto } from './dto/create-comment-request.dto';
@@ -13,9 +14,7 @@ export class CommentsController {
 
   @Get()
   findByPost(@Query() query: QueryCommentsDto) {
-    const pageNum = query.page ? parseInt(query.page, 10) : 1;
-    const limitNum = query.limit ? parseInt(query.limit, 10) : 10;
-    return this.commentsService.findByPost(query.postId, pageNum, limitNum);
+    return this.commentsService.findByPost(query.postId, query.page ?? 1, query.limit ?? 10);
   }
 
   @Post()
@@ -40,12 +39,9 @@ export class NestedCommentsController {
   @Get()
   findNestedByPost(
     @Param('postId') postId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query() query: PaginationQueryDto,
   ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.commentsService.findByPost(postId, pageNum, limitNum);
+    return this.commentsService.findByPost(postId, query.page ?? 1, query.limit ?? 10);
   }
 
   @Post()

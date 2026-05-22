@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../auth/services/auth.service';
 
@@ -10,29 +10,15 @@ import { AuthService } from '../../auth/services/auth.service';
     <main class="admin-page">
       <header class="admin-header">
         <p class="eyebrow">Panel Admin</p>
-        <h1>Administración</h1>
-        <p>Gestiona usuarios, roles y permisos de acceso desde un solo lugar.</p>
+        <h1>Administracion</h1>
+        <p>Gestiona usuarios, roles, permisos y publicaciones desde un solo lugar.</p>
       </header>
 
       <section class="admin-grid">
-        @if (authService.hasPermission('users.read')) {
-          <a routerLink="/admin/users" class="admin-card">
-            <span class="card-title">Usuarios</span>
-            <span class="card-copy">Crear, buscar, editar y desactivar usuarios.</span>
-          </a>
-        }
-
-        @if (authService.hasPermission('roles.read')) {
-          <a routerLink="/admin/roles" class="admin-card">
-            <span class="card-title">Roles</span>
-            <span class="card-copy">Define grupos de acceso y sus permisos.</span>
-          </a>
-        }
-
-        @if (authService.hasPermission('permissions.read')) {
-          <a routerLink="/admin/permissions" class="admin-card">
-            <span class="card-title">Permisos</span>
-            <span class="card-copy">Consulta las acciones disponibles por módulo.</span>
+        @for (section of adminSections(); track section.route) {
+          <a [routerLink]="section.route" class="admin-card">
+            <span class="card-title">{{ section.label }}</span>
+            <span class="card-copy">{{ section.description }}</span>
           </a>
         }
       </section>
@@ -104,4 +90,5 @@ import { AuthService } from '../../auth/services/auth.service';
 })
 export class AdminDashboardComponent {
   protected authService = inject(AuthService);
+  protected adminSections = computed(() => this.authService.getAdminSections());
 }

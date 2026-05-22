@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
+import { RuntimeConfigService } from '../../../core/services/runtime-config.service';
 import { ApiResponse, Permission, Role } from '../data/access.interfaces';
 
 export interface CreatePermissionPayload {
@@ -40,8 +41,15 @@ export interface UpdateRolePayload {
 })
 export class AdminAccessService {
   private http = inject(HttpClient);
-  private rolesUrl = 'http://localhost:3000/roles';
-  private permissionsUrl = 'http://localhost:3000/permissions';
+  private runtimeConfig = inject(RuntimeConfigService);
+
+  private get rolesUrl() {
+    return `${this.runtimeConfig.apiBaseUrl}/roles`;
+  }
+
+  private get permissionsUrl() {
+    return `${this.runtimeConfig.apiBaseUrl}/permissions`;
+  }
 
   getRoles(): Observable<ApiResponse<Role[]>> {
     return this.http.get<ApiResponse<Role[]>>(this.rolesUrl).pipe(

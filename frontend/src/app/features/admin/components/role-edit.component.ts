@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminAccessService } from '../services/admin-access.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { Permission } from '../data/access.interfaces';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-role-edit',
@@ -205,6 +206,7 @@ export class RoleEditComponent implements OnInit {
   private toast = inject(ToastService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
 
   permissions = signal<Permission[]>([]);
   selectedPermissions = signal<string[]>([]);
@@ -234,6 +236,11 @@ export class RoleEditComponent implements OnInit {
   };
 
   ngOnInit() {
+    if (!this.authService.hasPermission('roles.update')) {
+      this.router.navigate(['/admin']);
+      return;
+    }
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isLoadingPermissions.set(true);

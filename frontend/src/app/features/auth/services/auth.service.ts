@@ -4,6 +4,7 @@ import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { ApiResponse } from '../../../core/models/api-response';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { RuntimeConfigService } from '../../../core/services/runtime-config.service';
 import { SessionState, SessionUser } from '../data/session.interfaces';
 
 export interface AuthResponse extends ApiResponse<{
@@ -19,8 +20,12 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
   private toast = inject(ToastService);
-  private apiUrl = 'http://localhost:3000/auth';
+  private runtimeConfig = inject(RuntimeConfigService);
   private readonly session = signal<SessionState | null>(this.readStoredSession());
+
+  private get apiUrl() {
+    return `${this.runtimeConfig.apiBaseUrl}/auth`;
+  }
 
   constructor() {
     this.ensureSessionValidity();
@@ -89,15 +94,38 @@ export class AuthService {
   }
 
   canAccessAdmin(): boolean {
-    return (
-      this.hasPermission('users.read') ||
-      this.hasPermission('roles.read') ||
-      this.hasPermission('roles.create') ||
-      this.hasPermission('permissions.read') ||
-      this.hasPermission('permissions.create') ||
-      this.hasPermission('posts.read') ||
-      this.hasPermission('posts.create')
-    );
+    return this.getAdminSections().length > 0;
+  }
+
+  getAdminSections(): Array<{ label: string; route: string; permission: string; description: string }> {
+    const sections = [
+      {
+        label: 'Usuarios',
+        route: '/admin/users',
+        permission: 'users.read',
+        description: 'Crear, buscar, editar y desactivar usuarios.',
+      },
+      {
+        label: 'Roles',
+        route: '/admin/roles',
+        permission: 'roles.read',
+        description: 'Define grupos de acceso y sus permisos.',
+      },
+      {
+        label: 'Permisos',
+        route: '/admin/permissions',
+        permission: 'permissions.read',
+        description: 'Consulta las acciones disponibles por modulo.',
+      },
+      {
+        label: 'Posts',
+        route: '/admin/posts',
+        permission: 'posts.read',
+        description: 'Administra publicaciones, borradores e importaciones.',
+      },
+    ];
+
+    return sections.filter((section) => this.hasPermission(section.permission));
   }
 
   handleUnauthorized() {

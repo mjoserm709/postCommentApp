@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AdminAccessService } from '../services/admin-access.service';
 import { Permission } from '../data/access.interfaces';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-role-create',
@@ -206,6 +207,7 @@ export class RoleCreateComponent implements OnInit {
   private adminAccessService = inject(AdminAccessService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private authService = inject(AuthService);
 
   permissions = signal<Permission[]>([]);
   selectedPermissions = signal<string[]>([]);
@@ -235,6 +237,11 @@ export class RoleCreateComponent implements OnInit {
   };
 
   ngOnInit() {
+    if (!this.authService.hasPermission('roles.create')) {
+      this.router.navigate(['/admin']);
+      return;
+    }
+
     this.isLoadingPermissions.set(true);
     this.adminAccessService.getPermissions().subscribe({
       next: (response) => {

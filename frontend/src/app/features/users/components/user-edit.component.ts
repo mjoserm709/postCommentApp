@@ -7,6 +7,7 @@ import { Role } from '../../admin/data/access.interfaces';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { User } from '../data/user.interfaces';
 import { UsersService } from '../services/users.service';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-user-edit',
@@ -217,6 +218,7 @@ export class UserEditComponent implements OnInit {
   private toast = inject(ToastService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
 
   roles = signal<Role[]>([]);
   selectedRoles = signal<string[]>([]);
@@ -236,6 +238,11 @@ export class UserEditComponent implements OnInit {
   };
 
   ngOnInit() {
+    if (!this.authService.hasPermission('users.update')) {
+      this.router.navigate(['/admin']);
+      return;
+    }
+
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       this.router.navigate(['/admin/users']);

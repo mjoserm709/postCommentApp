@@ -1,16 +1,9 @@
-import { IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsMongoId, IsNotEmpty, IsString } from 'class-validator';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
-export class QueryCommentsDto {
+export class QueryCommentsDto extends PaginationQueryDto {
   @IsString()
   @IsNotEmpty()
   @IsMongoId()
   postId!: string;
-
-  @IsOptional()
-  @IsString()
-  page?: string;
-
-  @IsOptional()
-  @IsString()
-  limit?: string;
 }

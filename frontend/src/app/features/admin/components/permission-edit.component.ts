@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule, NgForm } from '@angular/forms';
 import { AdminAccessService } from '../services/admin-access.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-permission-edit',
@@ -132,6 +133,7 @@ export class PermissionEditComponent {
   private toast = inject(ToastService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
 
   isLoading = signal(false);
   permission = {
@@ -143,6 +145,11 @@ export class PermissionEditComponent {
   };
 
   ngOnInit() {
+    if (!this.authService.hasPermission('permissions.update')) {
+      this.router.navigate(['/admin']);
+      return;
+    }
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isLoading.set(true);

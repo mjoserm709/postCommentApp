@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -82,9 +82,8 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    if (updateUserDto.password) {
-      const salt = await bcrypt.genSalt();
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, salt);
+    if ('password' in (updateUserDto as Record<string, unknown>)) {
+      throw new BadRequestException('Password must be changed through the dedicated change-password flow');
     }
 
     Object.assign(user, updateUserDto);

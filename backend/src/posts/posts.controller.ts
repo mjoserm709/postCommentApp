@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -16,21 +17,16 @@ export class PostsController {
   @Get()
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('posts.read')
-  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 12;
-    return this.postsService.findAll(pageNum, limitNum);
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.postsService.findAll(query.page ?? 1, query.limit ?? 12);
   }
 
   @Get('category/:categorySlug')
   findPublishedByCategory(
     @Param('categorySlug') categorySlug: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query() query: PaginationQueryDto,
   ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 12;
-    return this.postsService.findPublishedByCategory(categorySlug, pageNum, limitNum);
+    return this.postsService.findPublishedByCategory(categorySlug, query.page ?? 1, query.limit ?? 12);
   }
 
   @Get(':id')

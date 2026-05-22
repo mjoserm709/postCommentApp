@@ -3,6 +3,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AdminAccessService } from '../services/admin-access.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-permission-create',
@@ -133,6 +134,7 @@ export class PermissionCreateComponent {
   private adminAccessService = inject(AdminAccessService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private authService = inject(AuthService);
 
   isLoading = signal(false);
   permission = {
@@ -142,6 +144,12 @@ export class PermissionCreateComponent {
     description: '',
     isActive: true,
   };
+
+  ngOnInit() {
+    if (!this.authService.hasPermission('permissions.create')) {
+      this.router.navigate(['/admin']);
+    }
+  }
 
   onSubmit(form: NgForm) {
     if (form.invalid) {

@@ -32,27 +32,9 @@
               <a class="nav-link" routerLink="/admin" routerLinkActive="active" (click)="closeMobileMenu()">Admin</a>
             </li>
 
-            @if (authService.hasPermission('users.read')) {
+            @for (section of authService.getAdminSections(); track section.route) {
               <li class="nav-item">
-                <a class="nav-link" routerLink="/admin/users" routerLinkActive="active" (click)="closeMobileMenu()">Usuarios</a>
-              </li>
-            }
-
-            @if (authService.hasPermission('roles.read')) {
-              <li class="nav-item">
-                <a class="nav-link" routerLink="/admin/roles" routerLinkActive="active" (click)="closeMobileMenu()">Roles</a>
-              </li>
-            }
-
-            @if (authService.hasPermission('permissions.read')) {
-              <li class="nav-item">
-                <a class="nav-link" routerLink="/admin/permissions" routerLinkActive="active" (click)="closeMobileMenu()">Permisos</a>
-              </li>
-            }
-
-            @if (authService.hasPermission('posts.read')) {
-              <li class="nav-item">
-                <a class="nav-link" routerLink="/admin/posts" routerLinkActive="active" (click)="closeMobileMenu()">Posts</a>
+                <a class="nav-link" [routerLink]="section.route" routerLinkActive="active" (click)="closeMobileMenu()">{{ section.label }}</a>
               </li>
             }
           }

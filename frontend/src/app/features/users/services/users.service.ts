@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, retry, catchError, throwError } from 'rxjs';
+import { RuntimeConfigService } from '../../../core/services/runtime-config.service';
 import { User, ApiResponse, UpdateUserPayload } from '../data/user.interfaces';
 
 @Injectable({
@@ -8,11 +9,15 @@ import { User, ApiResponse, UpdateUserPayload } from '../data/user.interfaces';
 })
 export class UsersService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/users';
+  private runtimeConfig = inject(RuntimeConfigService);
+
+  private get apiUrl() {
+    return `${this.runtimeConfig.apiBaseUrl}/users`;
+  }
 
   getUsers(): Observable<ApiResponse<User[]>> {
     return this.http.get<ApiResponse<User[]>>(this.apiUrl).pipe(
-      retry(2), // Reintentar 2 veces si falla la red
+      retry(2),
       catchError(error => {
         console.error('Error fetching users', error);
         return throwError(() => error);

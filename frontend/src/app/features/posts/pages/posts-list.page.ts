@@ -47,14 +47,17 @@ interface ExcelPostRow {
       @if (authService.hasPermission('posts.create')) {
         <div class="bulk-panel app-surface-card app-section-stack">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-            <div><h2>Carga masiva por Excel</h2><p>Sube un archivo .xlsx para crear multiples posts.</p></div>
-            <button class="btn btn-outline-secondary btn-sm" type="button" (click)="downloadTemplate()">Descargar plantilla</button>
+            <div><h2>Carga masiva</h2><p>Sube un archivo .xlsx, .csv o .json para crear multiples posts.</p></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="downloadTemplate()">Plantilla Excel</button>
+              <button class="btn btn-outline-secondary btn-sm" type="button" (click)="downloadJsonExample()">Ejemplo JSON</button>
+            </div>
           </div>
           <form [formGroup]="bulkForm" (ngSubmit)="importBulk()">
             <label class="form-label">ID del lote (Opcional)</label>
             <input class="form-control mb-3" formControlName="importId" placeholder="ej. lote-mayo-2026">
-            <label class="form-label">Archivo de Excel (.xlsx, .csv)</label>
-            <input class="form-control" type="file" accept=".xlsx, .csv" (change)="onFileChange($event)" #fileInput>
+            <label class="form-label">Archivo (.xlsx, .csv, .json)</label>
+            <input class="form-control" type="file" accept=".xlsx,.csv,.json,application/json,text/csv" (change)="onFileChange($event)" #fileInput>
             @if (excelPosts().length > 0) { <div class="mt-2 text-success"><small>Archivo listo: {{ excelPosts().length }} posts detectados.</small></div> }
             <button class="btn btn-primary mt-3" type="submit" [disabled]="isImporting() || excelPosts().length === 0">{{ isImporting() ? 'Importando...' : 'Importar posts' }}</button>
           </form>
@@ -114,10 +117,51 @@ export class PostsListPage implements OnInit {
     XLSX.writeFile(wb, 'plantilla-posts.xlsx');
   }
 
+  downloadJsonExample() {
+    const example = [
+      {
+        title: 'Ejemplo de post',
+        slug: 'ejemplo-de-post',
+        excerpt: 'Resumen corto del post para importacion masiva.',
+        content: 'Contenido completo del post. Debe tener una longitud minima valida para pasar la validacion del backend.',
+        categorySlug: 'terror',
+        coverImageUrl: 'https://ejemplo.com/imagen.jpg',
+        tags: ['cuento', 'suspenso'],
+        status: 'published',
+        commentsEnabled: true,
+      },
+      {
+        title: 'Segundo ejemplo',
+        slug: 'segundo-ejemplo',
+        excerpt: 'Otro resumen corto para probar multiples registros.',
+        content: 'Otro contenido de ejemplo suficientemente largo para ilustrar el formato del archivo JSON.',
+        categorySlug: 'fantasia',
+        tags: ['aventura', 'magia'],
+        status: 'draft',
+        commentsEnabled: false,
+      },
+    ];
+
+    const blob = new Blob([JSON.stringify(example, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'posts-ejemplo.json';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   onFileChange(event: any) {
     const target = event.target as HTMLInputElement;
     if (target.files?.length !== 1) return;
     const file = target.files[0];
+    const extension = file.name.split('.').pop()?.toLowerCase();
+
+    if (extension === 'json') {
+      this.readJsonFile(file);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e: any) => {
       try {
@@ -145,6 +189,39 @@ export class PostsListPage implements OnInit {
       }
     };
     reader.readAsBinaryString(file);
+  }
+
+  private readJsonFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const raw = JSON.parse(String(reader.result));
+        if (!Array.isArray(raw)) {
+          throw new Error('JSON root must be an array');
+        }
+
+        const data = raw.map((row): CreatePostPayload => ({
+          title: String(row?.title ?? '').trim(),
+          slug: String(row?.slug ?? '').trim(),
+          excerpt: String(row?.excerpt ?? '').trim(),
+          content: String(row?.content ?? '').trim(),
+          categorySlug: String(row?.categorySlug ?? '').trim(),
+          coverImageUrl: row?.coverImageUrl ? String(row.coverImageUrl).trim() : undefined,
+          tags: Array.isArray(row?.tags)
+            ? row.tags.map((tag: unknown) => String(tag).trim()).filter(Boolean)
+            : [],
+          status: row?.status,
+          commentsEnabled: row?.commentsEnabled ?? true,
+        }));
+
+        this.excelPosts.set(data);
+        this.toast.success(`Archivo JSON leido con ${data.length} filas.`);
+      } catch {
+        this.toast.error('Error al leer el archivo JSON.');
+        this.excelPosts.set([]);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
   }
 
   importBulk() { const posts = this.excelPosts(); if (posts.length === 0) { this.toast.error('Debes seleccionar un archivo valido primero.'); return; } this.isImporting.set(true); const importId = this.bulkForm.value.importId?.trim() || undefined; this.postsService.createBulk({ importId, posts }).pipe(finalize(() => this.isImporting.set(false))).subscribe({ next: (response) => { this.toast.success(`${response.data.count} posts importados correctamente.`); this.loadPosts(); this.excelPosts.set([]); this.bulkForm.reset(); } }); }

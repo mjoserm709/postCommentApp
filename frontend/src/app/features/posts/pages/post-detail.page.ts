@@ -67,10 +67,31 @@ export class PostDetailPage implements OnInit {
   loadCategories() { this.categoriesService.getCategories(1, 50).subscribe({ next: (response) => { const data = response.data; this.categories.set(Array.isArray(data) ? data : (data.items || [])); } }); }
   loadPosts() { this.route.paramMap.pipe(tap(() => this.isLoading.set(true)), switchMap((params) => { const slug = params.get('slug') ?? this.slug; return this.postsService.getPublishedByCategory(slug, this.page(), this.postLimit).pipe(delay(150), tap((response) => { const data = response.data; const items = Array.isArray(data) ? data : (data.items || []); this.posts.set(items); this.totalPages.set(Array.isArray(data) ? 1 : (data.totalPages || 1)); }), switchMap((response) => { const data = response.data; const items = Array.isArray(data) ? data : (data.items || []); const postId = this.route.snapshot.queryParamMap.get('postId'); if (!postId) return of(response); const post = items.find((item: Post) => item._id === postId); if (post) this.openComments(post); return of(response); }), finalize(() => this.isLoading.set(false))); })).subscribe(); }
   changePage(nextPage: number) { this.page.set(nextPage); this.loadPosts(); }
-  openComments(post: Post) { this.selectedPost.set(post); this.commentsPage.set(1); this.loadComments(post._id); }
+  private pollingInterval: any;
+
+  openComments(post: Post) { 
+    this.selectedPost.set(post); 
+    this.commentsPage.set(1); 
+    this.loadComments(post._id); 
+    
+    // Iniciar polling para comentarios en vivo cada 3 segundos
+    this.pollingInterval = setInterval(() => {
+      if (this.selectedPost()) {
+        this.loadComments(this.selectedPost()!._id);
+      }
+    }, 3000);
+  }
+
   loadComments(postId: string) { this.commentsService.getComments(postId, this.commentsPage(), this.commentLimit).subscribe({ next: (response) => { const data = response.data; this.comments.set(Array.isArray(data) ? data : (data.items || [])); this.commentsTotalPages.set(Array.isArray(data) ? 1 : (data.totalPages || 1)); } }); }
   changeCommentsPage(nextPage: number) { const postId = this.selectedPost()?._id; if (!postId) return; this.commentsPage.set(nextPage); this.loadComments(postId); }
-  closeComments() { this.selectedPost.set(null); this.comments.set([]); }
+  
+  closeComments() { 
+    this.selectedPost.set(null); 
+    this.comments.set([]); 
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+    }
+  }
   openCreatePostModal() { this.isCreatePostModalOpen.set(true); }
   closeCreatePostModal() { if (!this.isSavingPost()) this.isCreatePostModalOpen.set(false); }
   createPost(payload: CreatePostPayload) { this.isSavingPost.set(true); this.postsService.createPost({ ...payload, categorySlug: this.slug, status: payload.status ?? ('published' as PostStatus) }).pipe(finalize(() => this.isSavingPost.set(false))).subscribe({ next: () => { this.isCreatePostModalOpen.set(false); this.toast.success('Post creado correctamente.'); this.loadPosts(); } }); }

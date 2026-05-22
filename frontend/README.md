@@ -1,59 +1,35 @@
-# Frontend
+# Frontend (Angular Standalone)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.2.
+Proyecto generado con [Angular CLI](https://github.com/angular/angular-cli) versión 20.3.2 utilizando la arquitectura moderna de **Standalone Components** (sin NgModules).
 
-## Development server
+## Características Implementadas
 
-To start a local development server, run:
+- **Gestión de Estado Reactivo**: Utilización del ecosistema de **Signals** (`signal()`, `computed()`) para mantener el estado de la aplicación sincronizado, predecible y altamente eficiente.
+- **Procesamiento de Archivos (Cliente)**: Implementación de la librería `xlsx` (SheetJS) para leer archivos de Excel, validarlos internamente, transformarlos en JSON y enviarlos al servidor (Carga Masiva).
+- **Polling de Comentarios**: Implementación nativa de recarga en tiempo real utilizando funciones asíncronas con `setInterval` acopladas al ciclo de vida del Signal.
+- **UI/UX Mejorado**:
+  - Alertas dinámicas, de confirmación y modales interactivos a través de `SweetAlert2`.
+  - Sistema de comentarios visualmente adaptativo (mensajes del usuario alineados a la derecha, ajenos a la izquierda) simulando un chat moderno con iniciales de avatar automáticas.
+  - Sistema de "Toast" Notifications globales para eventos menores.
 
+## Comandos Principales
+
+### Servidor de Desarrollo
+Para iniciar el entorno local, corre:
 ```bash
-ng serve
+npm start
 ```
+Abre tu navegador en `http://localhost:4200/`. La aplicación recargará automáticamente ante cualquier cambio de código.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+### Compilación para Producción
+Para compilar los binarios y empaquetar el frontend:
 ```bash
-ng generate component component-name
+npm run build
 ```
+Los archivos optimizados quedarán almacenados en el directorio `dist/`.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
+### Testing
+Para ejecutar las pruebas unitarias nativas (Karma/Jasmine):
 ```bash
-ng generate --help
+npm test
 ```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

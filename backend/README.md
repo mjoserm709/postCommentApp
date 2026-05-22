@@ -1,16 +1,56 @@
-# Backend (NestJS)
+# Backend
 
-La documentación principal y detallada de todo el proyecto vive en el [`README.md`](../README.md) de la raíz.
+La documentacion principal del proyecto vive en el [README de la raiz](../README.md).
 
-## Puntos relevantes y funcionalidades del backend:
+## Resumen tecnico
 
-- **Framework & DB**: NestJS + Mongoose (MongoDB).
-- **Seguridad**: Autenticación mediante JWT y protección de rutas con Decoradores de Permisos.
-- **Manejo de Respuestas**:
-  - `ValidationPipe` global para validar los Data Transfer Objects (DTOs).
-  - `GlobalExceptionFilter` para capturar errores y retornar un formato JSON unificado.
-  - `ResponseInterceptor` para formatear los casos de éxito estandarizados (`{ success, data, message }`).
-- **Paginación Real**: Integrada en los servicios (ej. `PostsService` y `CategoriesService`) utilizando `.skip()` y `.limit()` nativos de MongoDB para alto rendimiento.
-- **Carga Masiva**: Endpoint `POST /posts/bulk` optimizado con `insertMany()`.
-- **Testing**: Pruebas unitarias configuradas con **Jest**, usando Mocks y el módulo de Testing de NestJS para no depender de una conexión a base de datos.
-  - Para ejecutar pruebas: `npm run test`
+El backend esta construido con NestJS, Mongoose y MongoDB, y cubre:
+
+- autenticacion JWT
+- autorizacion por roles y permisos
+- CRUD administrativo de usuarios, roles y permisos
+- posts con estados y carga masiva
+- comentarios por post
+- respuestas y errores estandarizados
+- configuracion por ambiente con `ConfigModule`
+- logging HTTP con `requestId`
+- auditoria basica de cambios administrativos
+
+## Configuracion
+
+El backend usa variables de entorno cargadas por `ConfigModule`.
+
+Archivos recomendados:
+
+- `.env`
+- `.env.development`
+- `.env.production.example`
+
+Variables clave:
+
+```env
+PORT=3000
+MONGO_URI=mongodb://localhost:27017/postcommentapp
+JWT_SECRET=change_this_to_a_long_random_secret
+CORS_ORIGIN=http://localhost:4200
+JWT_EXPIRES_IN=1d
+```
+
+## Comandos principales
+
+```bash
+npm run start:dev
+npm run build
+npm run test
+```
+
+## Testing
+
+La base incluye pruebas unitarias en:
+
+- auth
+- users
+- comments
+- guards
+- roles
+- permissions

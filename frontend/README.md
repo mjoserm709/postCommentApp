@@ -1,35 +1,64 @@
-# Frontend (Angular Standalone)
+# Frontend
 
-Proyecto generado con [Angular CLI](https://github.com/angular/angular-cli) versión 20.3.2 utilizando la arquitectura moderna de **Standalone Components** (sin NgModules).
+Cliente Angular standalone para PostCommentApp.
 
-## Características Implementadas
+La documentacion funcional y de instalacion general esta en el [README de la raiz](../README.md).
 
-- **Gestión de Estado Reactivo**: Utilización del ecosistema de **Signals** (`signal()`, `computed()`) para mantener el estado de la aplicación sincronizado, predecible y altamente eficiente.
-- **Procesamiento de Archivos (Cliente)**: Implementación de la librería `xlsx` (SheetJS) para leer archivos de Excel, validarlos internamente, transformarlos en JSON y enviarlos al servidor (Carga Masiva).
-- **Polling de Comentarios**: Implementación nativa de recarga en tiempo real utilizando funciones asíncronas con `setInterval` acopladas al ciclo de vida del Signal.
-- **UI/UX Mejorado**:
-  - Alertas dinámicas, de confirmación y modales interactivos a través de `SweetAlert2`.
-  - Sistema de comentarios visualmente adaptativo (mensajes del usuario alineados a la derecha, ajenos a la izquierda) simulando un chat moderno con iniciales de avatar automáticas.
-  - Sistema de "Toast" Notifications globales para eventos menores.
+## Responsabilidades del frontend
 
-## Comandos Principales
+- login y persistencia de sesion
+- navegacion segun permisos
+- panel administrativo
+- listado y detalle de posts
+- comentarios por post
+- carga masiva de posts
+- configuracion runtime del backend destino
 
-### Servidor de Desarrollo
-Para iniciar el entorno local, corre:
+## Configuracion runtime
+
+El frontend lee la URL del API desde:
+
+`public/app-config.json`
+
+Ejemplo:
+
+```json
+{
+  "apiBaseUrl": "http://localhost:3000"
+}
+```
+
+Esto permite mover el frontend entre ambientes sin recompilar.
+
+## Carga masiva
+
+La pantalla de posts acepta:
+
+- `.xlsx`
+- `.csv`
+- `.json`
+
+Ejemplo JSON:
+
+```json
+[
+  {
+    "title": "Ejemplo de post",
+    "slug": "ejemplo-de-post",
+    "excerpt": "Resumen corto del post para importacion masiva.",
+    "content": "Contenido completo del post. Debe tener una longitud minima valida.",
+    "categorySlug": "terror",
+    "tags": ["cuento", "suspenso"],
+    "status": "published",
+    "commentsEnabled": true
+  }
+]
+```
+
+## Comandos principales
+
 ```bash
 npm start
-```
-Abre tu navegador en `http://localhost:4200/`. La aplicación recargará automáticamente ante cualquier cambio de código.
-
-### Compilación para Producción
-Para compilar los binarios y empaquetar el frontend:
-```bash
 npm run build
-```
-Los archivos optimizados quedarán almacenados en el directorio `dist/`.
-
-### Testing
-Para ejecutar las pruebas unitarias nativas (Karma/Jasmine):
-```bash
 npm test
 ```

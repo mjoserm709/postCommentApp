@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
@@ -30,6 +30,10 @@ export class AuthService {
     const user = await this.validateUser(loginDto);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.isActive === false) {
+      throw new ForbiddenException('User account is inactive');
     }
     
     const roles = await this.rolesService.findActiveByKeys(user.roles ?? []);

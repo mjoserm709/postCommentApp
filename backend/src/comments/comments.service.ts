@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Post, PostDocument } from '../posts/schemas/post.schema';
@@ -15,6 +15,7 @@ export class CommentsService {
   ) {}
 
   async findByPost(postId: string, page: number = 1, limit: number = 10) {
+    this.ensureValidObjectId(postId, 'postId');
     const skip = (page - 1) * limit;
     const normalizedPostId = new Types.ObjectId(postId);
     const query = { postId: normalizedPostId, isActive: true };
@@ -39,6 +40,8 @@ export class CommentsService {
   }
 
   async create(postId: string, createCommentDto: CreateCommentDto, authorId: string) {
+    this.ensureValidObjectId(postId, 'postId');
+    this.ensureValidObjectId(authorId, 'authorId');
     const post = await this.postModel.findById(postId).exec();
     if (!post || !post.isActive) {
       throw new NotFoundException('Post not found');
@@ -60,6 +63,8 @@ export class CommentsService {
   }
 
   async remove(id: string, currentUserId: string) {
+    this.ensureValidObjectId(id, 'commentId');
+    this.ensureValidObjectId(currentUserId, 'currentUserId');
     const comment = await this.commentModel.findById(id).exec();
 
     if (!comment || !comment.isActive) {
@@ -92,5 +97,11 @@ export class CommentsService {
           }
         : undefined,
     };
+  }
+
+  private ensureValidObjectId(value: string, fieldName: string) {
+    if (!Types.ObjectId.isValid(value)) {
+      throw new BadRequestException(`Invalid ${fieldName}`);
+    }
   }
 }

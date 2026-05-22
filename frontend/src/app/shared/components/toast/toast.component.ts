@@ -1,26 +1,34 @@
 import { Component, inject } from '@angular/core';
-import { NgbToastModule } from '@ng-bootstrap/ng-bootstrap';
 import { ToastService, Toast } from './toast.service';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
-  imports: [NgbToastModule],
-    template: `
+  template: `
     <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1200">
       @for (toast of toastService.toasts(); track toast.id) {
-        <ngb-toast
+        <div
+          class="toast-item shadow-sm"
           [class]="getToastClass(toast)"
-          [autohide]="true"
-          [delay]="toast.duration"
-          (hidden)="toastService.dismiss(toast.id)"
-          [header]="getHeader(toast)"
+          role="status"
+          aria-live="polite"
         >
+          <div class="toast-header-custom">
+            <strong>{{ getHeader(toast) }}</strong>
+            <button
+              type="button"
+              class="toast-close"
+              aria-label="Cerrar notificacion"
+              (click)="toastService.dismiss(toast.id)"
+            >
+              x
+            </button>
+          </div>
           <div class="d-flex align-items-center gap-2">
             <span>{{ getIcon(toast) }}</span>
             <span>{{ toast.message }}</span>
           </div>
-        </ngb-toast>
+        </div>
       }
     </div>
   `,
@@ -32,28 +40,77 @@ import { ToastService, Toast } from './toast.service';
       z-index: 1200;
     }
 
-    ngb-toast.toast-success {
-      --bs-toast-border-color: #198754;
-      --bs-toast-header-color: #fff;
-      --bs-toast-header-bg: #198754;
+    .toast-container {
+      display: grid;
+      gap: 12px;
     }
 
-    ngb-toast.toast-error {
-      --bs-toast-border-color: #dc3545;
-      --bs-toast-header-color: #fff;
-      --bs-toast-header-bg: #dc3545;
+    .toast-item {
+      min-width: 280px;
+      max-width: 360px;
+      padding: 0;
+      border: 1px solid #dbe3ef;
+      border-radius: 14px;
+      background: #ffffff;
+      overflow: hidden;
     }
 
-    ngb-toast.toast-info {
-      --bs-toast-border-color: #0dcaf0;
-      --bs-toast-header-color: #fff;
-      --bs-toast-header-bg: #0dcaf0;
+    .toast-header-custom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      font-weight: 700;
     }
 
-    ngb-toast.toast-warning {
-      --bs-toast-border-color: #ffc107;
-      --bs-toast-header-color: #000;
-      --bs-toast-header-bg: #ffc107;
+    .toast-item .d-flex {
+      padding: 12px 14px 14px;
+      color: #1e293b;
+    }
+
+    .toast-close {
+      border: 0;
+      background: transparent;
+      font-size: 0.95rem;
+      line-height: 1;
+      color: inherit;
+      opacity: 0.8;
+    }
+
+    .toast-success {
+      border-color: #198754;
+    }
+
+    .toast-success .toast-header-custom {
+      background: #198754;
+      color: #fff;
+    }
+
+    .toast-error {
+      border-color: #dc3545;
+    }
+
+    .toast-error .toast-header-custom {
+      background: #dc3545;
+      color: #fff;
+    }
+
+    .toast-info {
+      border-color: #0dcaf0;
+    }
+
+    .toast-info .toast-header-custom {
+      background: #0dcaf0;
+      color: #062c33;
+    }
+
+    .toast-warning {
+      border-color: #ffc107;
+    }
+
+    .toast-warning .toast-header-custom {
+      background: #ffc107;
+      color: #3b2f00;
     }
   `]
 })

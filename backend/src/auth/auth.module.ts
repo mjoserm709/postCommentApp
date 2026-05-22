@@ -7,13 +7,22 @@ import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RolesModule } from '../roles/roles.module';
 
+function getJwtSecret(): string {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+
+  return jwtSecret;
+}
+
 @Module({
   imports: [
     UsersModule,
     RolesModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secretKey', // In production, use ConfigModule
+      secret: getJwtSecret(),
       signOptions: { expiresIn: '1d' },
     }),
   ],

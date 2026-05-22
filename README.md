@@ -1,61 +1,62 @@
 # PostCommentApp
 
-Aplicación full-stack con `NestJS + MongoDB + Angular standalone` orientada a un flujo dinámico de posts y comentarios. El proyecto incluye autenticación JWT, respuestas estandarizadas, paginación real de base de datos, carga masiva de posts desde Excel, manejo global de errores y un frontend interactivo con Signals, RxJS, Polling en vivo y formularios reactivos.
+Aplicacion full-stack con `NestJS + MongoDB + Angular standalone` para gestion de categorias, posts, comentarios y administracion de acceso con JWT, roles y permisos.
 
-## 🚀 Novedades de la última versión
-- **Paginación Real**: Implementada nativamente en Mongoose para optimizar el rendimiento y evitar transferencias masivas de datos en la red.
-- **Carga Masiva con Excel**: Importación en bloque (Bulk) subiendo un archivo `.xlsx`. El cliente procesa el Excel mediante SheetJS y envía la data optimizada al backend.
-- **Comentarios en Vivo (Polling)**: Angular Signals combinados con `setInterval` para recargar comentarios en la pantalla de forma transparente sin que el usuario recargue la página.
-- **UI Moderna**: Listados de comentarios estilo "chat" (alineados a derecha e izquierda) con avatares dinámicos basados en iniciales. Notificaciones y confirmaciones mejoradas con `SweetAlert2`.
-- **Colección Postman**: Incluida en la raíz del proyecto para pruebas automáticas de la API de principio a fin.
-- **Pruebas Unitarias**: Entorno Jest configurado en el backend con simulaciones (Mocking) de base de datos.
+## Stack
 
-## 💻 Stack Tecnológico
+- Backend: NestJS 11, Mongoose, MongoDB, JWT, Passport, Jest
+- Frontend: Angular 20 standalone, RxJS, Signals, Bootstrap 5, SweetAlert2, XLSX
+- Infraestructura: Docker Compose para MongoDB
 
-- **Backend**: NestJS 11, Mongoose, MongoDB, JWT, Passport, Jest.
-- **Frontend**: Angular 20 standalone, Signals, RxJS, Reactive Forms, Bootstrap 5, SweetAlert2, XLSX (SheetJS).
-- **Infraestructura**: Docker y Docker Compose para la base de datos.
-
-## 📂 Estructura Principal
+## Estructura
 
 ```text
 backend/src
-├── posts       # Lógica CRUD, carga masiva y pruebas (posts.service.spec.ts)
-├── comments    # Manejo de comentarios paginados por Post
-├── auth        # Autenticación, JWT, Login y Registro
-├── users       # Gestión de roles y usuarios
-└── common      # Filtros, Interceptores y utilidades globales
+|- auth
+|- comments
+|- posts
+|- users
+|- common
 
 frontend/src/app
-├── core        # Interceptores de Auth, modelos y servicios base
-├── features
-│   ├── posts   # Listado general, modal de creación, carga masiva (Excel)
-│   ├── comments# Interfaz de mensajería asíncrona, recarga en vivo
-│   └── categories
-└── shared      # Pipes y notificaciones globales
+|- core
+|- features
+|- shared
 ```
 
-## ⚙️ Requisitos
+## Requisitos
 
-- Node.js 18+
-- npm 9+
+- Node.js 20+ recomendado
+- npm 10+ recomendado
 - Docker Desktop o una instancia local de MongoDB
 
-## 🔧 Variables de Entorno
+## Variables de entorno
 
-El backend usa estas variables:
+El backend usa un archivo local en `backend/.env`.
+
+Puedes crearlo a partir de:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Variables requeridas:
 
 ```env
 PORT=3000
-MONGO_URI=mongodb://localhost:27017/library
-JWT_SECRET=super-secret-key
+MONGO_URI=mongodb://localhost:27017/postcommentapp
+JWT_SECRET=change_this_to_a_long_random_secret
+CORS_ORIGIN=http://localhost:4200
 ```
 
-Si no defines `MONGO_URI`, el backend usa `mongodb://localhost:27017/library`.
+Notas:
 
-## 📦 Instalación y Ejecución
+- `JWT_SECRET` debe ser una clave larga y privada.
+- `CORS_ORIGIN` puede recibir varios orígenes separados por coma.
+  Ejemplo: `http://localhost:4200,http://127.0.0.1:4200`
+- El backend ahora exige `JWT_SECRET` y `CORS_ORIGIN` para iniciar.
 
-### 1. Instalar dependencias
+## Instalacion
 
 ```bash
 npm install
@@ -63,54 +64,68 @@ cd backend && npm install
 cd ../frontend && npm install
 ```
 
-### 2. Levantar MongoDB
-
-Con Docker:
+## Ejecutar MongoDB
 
 ```bash
 docker-compose up mongodb -d
 ```
 
-### 3. Ejecutar backend
+## Ejecutar backend
 
 ```bash
 cd backend
 npm run start:dev
 ```
-- API disponible en `http://localhost:3000`
-- Swagger disponible en `http://localhost:3000/api/docs`
 
-### 4. Ejecutar frontend
+- API: `http://localhost:3000`
+- Swagger: `http://localhost:3000/api/docs`
+
+## Ejecutar frontend
 
 ```bash
 cd frontend
 npm start
 ```
-- Interfaz disponible en `http://localhost:4200`
 
-## 🧪 Pruebas Unitarias (Backend)
+- App: `http://localhost:4200`
 
-Se implementaron pruebas automatizadas con Jest usando Mocks para aislar la base de datos:
+## Scripts utiles
+
+Backend:
 
 ```bash
 cd backend
+npm run build
 npm run test
 ```
 
-## 📚 API y Postman
+Frontend:
 
-El proyecto incluye el archivo `PostCommentApp-Collection.json` en la raíz. Solo tienes que importarlo en **Postman** para acceder a 17 endpoints pre-configurados con variables dinámicas de entorno y scripts de aserciones (`Tests`).
+```bash
+cd frontend
+npm run build
+```
 
-### Endpoints principales
-- **Auth**: `POST /auth/login`, `POST /auth/register`
-- **Posts**: `GET /posts` (paginado), `POST /posts`, `POST /posts/bulk`, etc.
-- **Comments**: `GET /comments?postId=<id>` (paginado), `POST /comments`.
+Raiz:
 
-## 📥 Carga Masiva (Bulk Insert)
+```bash
+npm run start:backend
+npm run start:frontend
+npm run start:all
+```
 
-El endpoint `POST /posts/bulk` usa `insertMany()` y valida:
-- Arreglo mínimo de posts.
-- Duplicados dentro del lote (Excel).
-- Slugs ya existentes en base de datos.
+## Endpoints principales
 
-En el frontend, el usuario puede descargar una **plantilla `.xlsx`**, llenarla y subirla. El navegador procesará las filas y las convertirá en los datos que el backend necesita.
+- `POST /auth/login`
+- `POST /auth/register`
+- `GET /posts`
+- `POST /posts`
+- `POST /posts/bulk`
+- `GET /comments?postId=<id>`
+- `POST /comments`
+
+## Estado actual
+
+- Backend compila correctamente con variables de entorno obligatorias.
+- Frontend compila correctamente.
+- Quedan advertencias no bloqueantes por tamano de bundle y por el paquete `sweetalert2` en formato CommonJS.

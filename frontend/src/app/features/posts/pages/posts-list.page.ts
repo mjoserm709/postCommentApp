@@ -13,6 +13,18 @@ import { Post, CreatePostPayload } from '../data/post.interfaces';
 import { PostsService } from '../services/posts.service';
 import * as XLSX from 'xlsx';
 
+interface ExcelPostRow {
+  title?: string;
+  slug?: string;
+  excerpt?: string;
+  content?: string;
+  categorySlug?: string;
+  coverImageUrl?: string;
+  tags?: string;
+  status?: CreatePostPayload['status'];
+  commentsEnabled?: boolean | string;
+}
+
 @Component({
   selector: 'app-posts-list-page',
   standalone: true,
@@ -74,7 +86,7 @@ import * as XLSX from 'xlsx';
 })
 export class PostsListPage implements OnInit {
   private fb = inject(FormBuilder); private postsService = inject(PostsService); private categoriesService = inject(CategoriesService); private toast = inject(ToastService); private router = inject(Router);
-  posts = signal<Post[]>([]); categories = signal<Category[]>([]); search = signal(''); isLoading = signal(false); isSaving = signal(false); isImporting = signal(false); isCreateModalOpen = signal(false); deletingPostIds = signal<string[]>([]); page = signal(1); totalPages = signal(1); limit = 12; excelPosts = signal<any[]>([]);
+  posts = signal<Post[]>([]); categories = signal<Category[]>([]); search = signal(''); isLoading = signal(false); isSaving = signal(false); isImporting = signal(false); isCreateModalOpen = signal(false); deletingPostIds = signal<string[]>([]); page = signal(1); totalPages = signal(1); limit = 12; excelPosts = signal<CreatePostPayload[]>([]);
   bulkForm = this.fb.nonNullable.group({ importId: [''] });
   filteredPosts = computed(() => { const term = this.search().trim().toLowerCase(); const posts = this.posts(); return !term ? posts : posts.filter((post) => `${post.title} ${post.excerpt} ${post.tags.join(' ')}`.toLowerCase().includes(term)); });
   ngOnInit() { this.loadPosts(); this.loadCategories(); }
@@ -101,10 +113,16 @@ export class PostsListPage implements OnInit {
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-        let data = XLSX.utils.sheet_to_json<any>(ws);
-        data = data.map(row => ({
-          ...row,
-          tags: row.tags ? String(row.tags).split(',').map(t => t.trim()).filter(Boolean) : [],
+        const rows = XLSX.utils.sheet_to_json<ExcelPostRow>(ws);
+        const data = rows.map((row): CreatePostPayload => ({
+          title: String(row.title ?? '').trim(),
+          slug: String(row.slug ?? '').trim(),
+          excerpt: String(row.excerpt ?? '').trim(),
+          content: String(row.content ?? '').trim(),
+          categorySlug: String(row.categorySlug ?? '').trim(),
+          coverImageUrl: row.coverImageUrl ? String(row.coverImageUrl).trim() : undefined,
+          tags: row.tags ? String(row.tags).split(',').map((tag) => tag.trim()).filter(Boolean) : [],
+          status: row.status,
           commentsEnabled: row.commentsEnabled === undefined || row.commentsEnabled === 'true' || row.commentsEnabled === true,
         }));
         this.excelPosts.set(data);

@@ -9,7 +9,8 @@ import { PostComment } from '../data/comment.interfaces';
   template: `
     <div class="comments-thread">
       @for (comment of comments; track comment._id) {
-        <article class="message">
+        <article class="message" [class.own]="isOwnComment(comment)">
+          <div class="avatar">{{ getInitials(authorName(comment)) }}</div>
           <div class="bubble">
             <div class="bubble-meta">
               <strong>{{ authorName(comment) }}</strong>
@@ -41,7 +42,31 @@ import { PostComment } from '../data/comment.interfaces';
     .message {
       display: flex;
       max-width: 92%;
-      gap: 10px;
+      gap: 12px;
+      align-self: flex-start;
+    }
+
+    .message.own {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      border-radius: 50%;
+      background: #0ea5e9;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .message.own .avatar {
+      background: #0f766e;
     }
 
     .bubble {
@@ -105,8 +130,19 @@ export class CommentsListComponent {
     return `${comment.author.firstName} ${comment.author.lastName}`.trim() || comment.author.username;
   }
 
-  canDelete(comment: PostComment): boolean {
+  getInitials(name: string): string {
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length === 0) return 'U';
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  isOwnComment(comment: PostComment): boolean {
     return !!this.currentUserId && comment.authorId === this.currentUserId;
+  }
+
+  canDelete(comment: PostComment): boolean {
+    return this.isOwnComment(comment);
   }
 
   onDelete(id: string) {

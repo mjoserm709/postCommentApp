@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { AppModalComponent } from '../../../shared/components/app-modal/app-modal.component';
 import { CategoriesService } from '../../categories/services/categories.service';
 import { Category } from '../../categories/data/category.interfaces';
 import { PostCardComponent } from '../components/post-card.component';
@@ -28,7 +29,7 @@ interface ExcelPostRow {
 @Component({
   selector: 'app-posts-list-page',
   standalone: true,
-  imports: [ReactiveFormsModule, SearchBarComponent, PostCardComponent, PostFormComponent],
+  imports: [ReactiveFormsModule, SearchBarComponent, PostCardComponent, PostFormComponent, AppModalComponent],
   template: `
     <main class="posts-page">
       <header class="posts-header app-page-header">
@@ -75,10 +76,15 @@ interface ExcelPostRow {
       }
 
       @if (isCreateModalOpen()) {
-        <div class="app-modal-backdrop" (click)="closeCreateModal()"></div>
-        <section class="app-modal-shell">
+        <app-modal
+          size="lg"
+          eyebrow="Publicacion"
+          title="Crear post"
+          subtitle="Completa la informacion principal del post antes de publicarlo o dejarlo en borrador."
+          (requestClose)="closeCreateModal()"
+        >
           <app-post-form [categories]="categories()" [isSubmitting]="isSaving()" submitLabel="Crear post" (save)="createPost($event)" (cancel)="closeCreateModal()" />
-        </section>
+        </app-modal>
       }
     </main>
   `,

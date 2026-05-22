@@ -74,9 +74,10 @@ img {
   inset: 32px 16px;
   z-index: 1050;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   overflow-y: auto;
+  padding: 12px 0;
 }
 
 .app-section-stack {
@@ -138,6 +139,8 @@ img {
 
   .app-modal-shell {
     inset: 12px 8px;
+    align-items: stretch;
+    padding: 0;
   }
 
   .app-surface-card,

@@ -8,6 +8,7 @@ import { CommentsListComponent } from '../../comments/components/comments-list.c
 import { PostComment } from '../../comments/data/comment.interfaces';
 import { CommentsService } from '../../comments/services/comments.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { AppModalComponent } from '../../../shared/components/app-modal/app-modal.component';
 import { CategoriesService } from '../../categories/services/categories.service';
 import { Category } from '../../categories/data/category.interfaces';
 import { PostCardComponent } from '../components/post-card.component';
@@ -19,7 +20,7 @@ import { PostsService } from '../services/posts.service';
 @Component({
   selector: 'app-post-detail-page',
   standalone: true,
-  imports: [RouterLink, SearchBarComponent, PostCardComponent, CommentsListComponent, CommentFormComponent, PostFormComponent],
+  imports: [RouterLink, SearchBarComponent, PostCardComponent, CommentsListComponent, CommentFormComponent, PostFormComponent, AppModalComponent],
   template: `
     <main class="category-page">
       <a routerLink="/" class="back-link">Volver a categorias</a>
@@ -49,8 +50,15 @@ import { PostsService } from '../services/posts.service';
     }
 
     @if (isCreatePostModalOpen()) {
-      <div class="app-modal-backdrop" (click)="closeCreatePostModal()"></div>
-      <section class="app-modal-shell"><app-post-form [categories]="categories()" [initialCategorySlug]="slug" [isSubmitting]="isSavingPost()" submitLabel="Crear post" (save)="createPost($event)" (cancel)="closeCreatePostModal()" /></section>
+      <app-modal
+        size="lg"
+        eyebrow="Publicacion"
+        title="Crear post"
+        subtitle="Crea una nueva publicacion dentro de esta categoria y define si saldra publicada de inmediato."
+        (requestClose)="closeCreatePostModal()"
+      >
+        <app-post-form [categories]="categories()" [initialCategorySlug]="slug" [isSubmitting]="isSavingPost()" submitLabel="Crear post" (save)="createPost($event)" (cancel)="closeCreatePostModal()" />
+      </app-modal>
     }
   `,
   styles: [`.category-page{width:var(--app-page-width);margin:0 auto;padding:34px 0 64px}.back-link{display:inline-block;margin-bottom:22px;color:#0f766e;font-weight:800;text-decoration:none}h1{margin:6px 0 8px;font-size:2.7rem;line-height:1}.category-header p,.state-card p{color:#475569;font-size:1.05rem}.comments-modal{position:fixed;inset:32px 16px;z-index:1050;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;width:min(760px,100%);margin:0 auto;overflow:hidden;border-radius:12px;background:#fff;box-shadow:0 24px 70px rgba(15,23,42,.28)}.comments-header{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;padding:20px 22px;border-bottom:1px solid #e5e7eb}.comments-header span,.login-note{color:#64748b;font-size:.84rem;font-weight:700}.comments-header h2{margin:5px 0 0;font-size:1.45rem}.login-note{text-align:center;padding:16px}.pager{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:22px}.comments-pager{padding:12px 16px;margin-top:0;border-top:1px solid #e5e7eb;background:#fff}@media (max-width:720px){.category-page{padding:20px 0 40px}h1{font-size:2rem}.comments-modal{inset:10px 8px;width:auto;border-radius:10px}.comments-header{padding:16px}.comments-header h2{font-size:1.2rem}}`],

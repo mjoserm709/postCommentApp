@@ -9,52 +9,67 @@ import { CreatePostPayload, PostStatus } from '../data/post.interfaces';
   imports: [ReactiveFormsModule],
   template: `
     <form class="post-form" [formGroup]="form" (ngSubmit)="submit()">
-      <label class="form-label">Titulo</label>
-      <input class="form-control" formControlName="title" (input)="syncSlug()">
+      <div class="post-form-body">
+        <div class="post-form-grid">
+          <div class="post-field post-field-full">
+            <label class="form-label">Titulo</label>
+            <input class="form-control" formControlName="title" (input)="syncSlug()" placeholder="Ej. La espada eterna">
+          </div>
 
-      <label class="form-label mt-3">Slug</label>
-      <input class="form-control" formControlName="slug">
+          <div class="post-field post-field-full">
+            <label class="form-label">Slug</label>
+            <input class="form-control" formControlName="slug" placeholder="la-espada-eterna">
+          </div>
 
-      <label class="form-label mt-3">Resumen</label>
-      <textarea class="form-control" rows="2" formControlName="excerpt"></textarea>
+          <div class="post-field post-field-full">
+            <label class="form-label">Resumen</label>
+            <textarea class="form-control" rows="3" formControlName="excerpt" placeholder="Resume en pocas lineas de que trata el post"></textarea>
+          </div>
 
-      <label class="form-label mt-3">Contenido</label>
-      <textarea class="form-control" rows="7" formControlName="content"></textarea>
+          <div class="post-field post-field-full">
+            <label class="form-label">Contenido</label>
+            <textarea class="form-control post-content" rows="8" formControlName="content" placeholder="Escribe aqui el contenido completo"></textarea>
+          </div>
 
-      <div class="row mt-3">
-        <div class="col-md-6">
-          <label class="form-label">Categoria</label>
-          <select class="form-select" formControlName="categorySlug">
-            <option value="">Selecciona</option>
-            @for (category of categories; track category._id) {
-              <option [value]="category.slug">{{ category.name }}</option>
-            }
-          </select>
+          <div class="post-field">
+            <label class="form-label">Categoria</label>
+            <select class="form-select" formControlName="categorySlug">
+              <option value="">Selecciona</option>
+              @for (category of categories; track category._id) {
+                <option [value]="category.slug">{{ category.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="post-field">
+            <label class="form-label">Estado</label>
+            <select class="form-select" formControlName="status">
+              <option value="draft">Borrador</option>
+              <option value="published">Publicado</option>
+              <option value="archived">Archivado</option>
+            </select>
+          </div>
+
+          <div class="post-field post-field-full">
+            <label class="form-label">Tags separados por coma</label>
+            <input class="form-control" formControlName="tagsInput" placeholder="fantasia, aventura, magia">
+          </div>
+
+          <div class="post-field post-field-full">
+            <label class="form-label">URL de portada</label>
+            <input class="form-control" formControlName="coverImageUrl" placeholder="https://...">
+          </div>
+
+          <div class="post-switch">
+            <input class="form-check-input" type="checkbox" id="commentsEnabled" formControlName="commentsEnabled">
+            <label class="form-check-label" for="commentsEnabled">Permitir comentarios</label>
+          </div>
         </div>
-        <div class="col-md-6">
-          <label class="form-label">Estado</label>
-          <select class="form-select" formControlName="status">
-            <option value="draft">Borrador</option>
-            <option value="published">Publicado</option>
-            <option value="archived">Archivado</option>
-          </select>
-        </div>
+
+        @if (hasValidationErrors()) {
+          <div class="error-box">Revisa los campos obligatorios. El resumen y contenido deben tener una longitud minima valida.</div>
+        }
       </div>
-
-      <label class="form-label mt-3">Tags separados por coma</label>
-      <input class="form-control" formControlName="tagsInput">
-
-      <label class="form-label mt-3">URL de portada</label>
-      <input class="form-control" formControlName="coverImageUrl">
-
-      <div class="form-check form-switch mt-3">
-        <input class="form-check-input" type="checkbox" id="commentsEnabled" formControlName="commentsEnabled">
-        <label class="form-check-label" for="commentsEnabled">Permitir comentarios</label>
-      </div>
-
-      @if (hasValidationErrors()) {
-        <div class="error-box">Revisa los campos obligatorios. El resumen y contenido deben tener una longitud minima valida.</div>
-      }
 
       <div class="modal-actions app-form-actions">
         <button class="btn btn-outline-secondary" type="button" (click)="cancel.emit()">Cancelar</button>
@@ -66,12 +81,81 @@ import { CreatePostPayload, PostStatus } from '../data/post.interfaces';
   `,
   styles: [`
     .post-form {
-      width: min(760px, 100%);
-      padding: 22px;
-      border: 1px solid var(--app-border);
-      border-radius: 12px;
-      background: var(--app-surface);
-      box-shadow: var(--app-shadow-modal);
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      min-height: 0;
+    }
+
+    .post-form-body {
+      overflow-y: auto;
+      padding: 22px 24px 10px;
+    }
+
+    .post-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px 16px;
+    }
+
+    .post-field {
+      min-width: 0;
+    }
+
+    .post-field-full {
+      grid-column: 1 / -1;
+    }
+
+    .post-form .form-label {
+      margin-bottom: 8px;
+      color: #0f172a;
+      font-size: 0.93rem;
+      font-weight: 700;
+    }
+
+    .post-form .form-control,
+    .post-form .form-select {
+      min-height: 48px;
+      border-radius: 14px;
+      border-color: #d7dde7;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: none;
+    }
+
+    .post-form textarea.form-control {
+      min-height: 108px;
+      resize: vertical;
+      padding-top: 12px;
+    }
+
+    .post-form .post-content {
+      min-height: 220px;
+    }
+
+    .post-form .form-control:focus,
+    .post-form .form-select:focus {
+      border-color: rgba(15, 118, 110, 0.55);
+      box-shadow: 0 0 0 0.2rem rgba(15, 118, 110, 0.12);
+    }
+
+    .post-switch {
+      grid-column: 1 / -1;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 2px;
+      padding: 12px 14px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 14px;
+      background: rgba(248, 250, 252, 0.9);
+    }
+
+    .post-switch .form-check-input {
+      margin: 0;
+      float: none;
+    }
+
+    .post-switch .form-check-label {
+      font-weight: 600;
     }
 
     .error-box {
@@ -84,9 +168,28 @@ import { CreatePostPayload, PostStatus } from '../data/post.interfaces';
       font-weight: 600;
     }
 
+    .modal-actions {
+      padding: 18px 24px 24px;
+      border-top: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(255, 255, 255, 0.96);
+    }
+
     @media (max-width: 720px) {
-      .post-form {
-        padding: 18px;
+      .post-form-header,
+      .post-form-body,
+      .modal-actions {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+
+      .post-form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .post-field,
+      .post-field-full,
+      .post-switch {
+        grid-column: auto;
       }
     }
   `],

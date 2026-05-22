@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type PermissionDocument = Permission & Document;
 
@@ -19,6 +19,12 @@ export class Permission {
 
   @Prop({ default: true })
   isActive!: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  createdBy?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  updatedBy?: Types.ObjectId;
 }
 
 export const PermissionSchema = SchemaFactory.createForClass(Permission);

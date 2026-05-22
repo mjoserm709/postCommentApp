@@ -1,6 +1,6 @@
 # PostCommentApp
 
-Aplicacion full-stack con `NestJS + MongoDB + Angular standalone` para gestion de categorias, posts, comentarios y administracion de acceso con JWT, roles y permisos.
+Aplicacion full-stack con `NestJS + MongoDB + Angular standalone` para categorias, posts, comentarios y administracion de acceso con JWT, roles y permisos.
 
 ## Stack
 
@@ -15,8 +15,11 @@ backend/src
 |- auth
 |- comments
 |- posts
+|- roles
+|- permissions
 |- users
 |- common
+|- config
 
 frontend/src/app
 |- core
@@ -30,15 +33,21 @@ frontend/src/app
 - npm 10+ recomendado
 - Docker Desktop o una instancia local de MongoDB
 
-## Variables de entorno
+## Configuracion del backend
 
-El backend usa un archivo local en `backend/.env`.
+El backend usa `ConfigModule` y carga variables por ambiente en este orden:
 
-Puedes crearlo a partir de:
+1. `.env.<NODE_ENV>.local`
+2. `.env.<NODE_ENV>`
+3. `.env.local`
+4. `.env`
 
-```bash
-cp backend/.env.example backend/.env
-```
+Archivos incluidos:
+
+- `backend/.env`
+- `backend/.env.example`
+- `backend/.env.development`
+- `backend/.env.production.example`
 
 Variables requeridas:
 
@@ -47,14 +56,34 @@ PORT=3000
 MONGO_URI=mongodb://localhost:27017/postcommentapp
 JWT_SECRET=change_this_to_a_long_random_secret
 CORS_ORIGIN=http://localhost:4200
+JWT_EXPIRES_IN=1d
 ```
 
 Notas:
 
-- `JWT_SECRET` debe ser una clave larga y privada.
-- `CORS_ORIGIN` puede recibir varios orígenes separados por coma.
-  Ejemplo: `http://localhost:4200,http://127.0.0.1:4200`
-- El backend ahora exige `JWT_SECRET` y `CORS_ORIGIN` para iniciar.
+- `JWT_SECRET` debe ser una clave privada y larga.
+- `CORS_ORIGIN` acepta varios origenes separados por coma.
+- El backend valida estas variables al iniciar.
+
+## Configuracion del frontend
+
+El frontend usa configuracion runtime desde:
+
+`frontend/public/app-config.json`
+
+Ejemplo:
+
+```json
+{
+  "apiBaseUrl": "http://localhost:3000"
+}
+```
+
+Tambien tienes una plantilla en:
+
+`frontend/public/app-config.example.json`
+
+Esto permite cambiar la URL del API sin recompilar Angular.
 
 ## Instalacion
 
@@ -114,6 +143,17 @@ npm run start:frontend
 npm run start:all
 ```
 
+## Cobertura tecnica agregada
+
+Se reforzo la base tecnica con:
+
+- `ConfigModule` y validacion de variables de entorno
+- configuracion runtime del frontend
+- validaciones mas estrictas en paginacion y posts
+- auditoria basica de `createdBy` y `updatedBy` en users, roles y permissions
+- logging HTTP con `requestId`
+- pruebas unitarias en auth, users, comments, guards, roles y permissions
+
 ## Endpoints principales
 
 - `POST /auth/login`
@@ -126,6 +166,7 @@ npm run start:all
 
 ## Estado actual
 
-- Backend compila correctamente con variables de entorno obligatorias.
-- Frontend compila correctamente.
-- Quedan advertencias no bloqueantes por tamano de bundle y por el paquete `sweetalert2` en formato CommonJS.
+- Backend compila correctamente
+- Frontend compila correctamente
+- El frontend puede apuntar a otro API sin rebuild
+- Quedan advertencias no bloqueantes por tamano de bundle y por `sweetalert2` en CommonJS

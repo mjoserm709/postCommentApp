@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -7,15 +8,10 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  const corsOrigin = process.env.CORS_ORIGIN;
-
-  if (!corsOrigin) {
-    throw new Error('CORS_ORIGIN environment variable is required');
-  }
+  const configService = app.get(ConfigService);
 
   app.enableCors({
-    origin: corsOrigin.split(',').map((origin) => origin.trim()).filter(Boolean),
+    origin: configService.get<string[]>('app.corsOrigins') ?? [],
     credentials: true,
   });
 
@@ -42,6 +38,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(configService.get<number>('app.port') ?? 3000);
 }
 bootstrap();

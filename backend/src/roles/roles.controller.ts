@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { RolesService } from './roles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -19,14 +20,14 @@ export class RolesController {
 
   @Post()
   @RequirePermissions('roles.create')
-  create(@Body() createRoleDto: CreateRoleDto) {
-    return this.rolesService.create(createRoleDto);
+  create(@Body() createRoleDto: CreateRoleDto, @Req() request: Request) {
+    return this.rolesService.create(createRoleDto, (request.user as { userId?: string } | undefined)?.userId);
   }
 
   @Patch(':id')
   @RequirePermissions('roles.update')
-  update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
-    return this.rolesService.update(id, updateRoleDto);
+  update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto, @Req() request: Request) {
+    return this.rolesService.update(id, updateRoleDto, (request.user as { userId?: string } | undefined)?.userId);
   }
 
   @Delete(':id')

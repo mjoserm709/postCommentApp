@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { PermissionsService } from './permissions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -19,14 +20,14 @@ export class PermissionsController {
 
   @Post()
   @RequirePermissions('permissions.create')
-  create(@Body() createPermissionDto: CreatePermissionDto) {
-    return this.permissionsService.create(createPermissionDto);
+  create(@Body() createPermissionDto: CreatePermissionDto, @Req() request: Request) {
+    return this.permissionsService.create(createPermissionDto, (request.user as { userId?: string } | undefined)?.userId);
   }
 
   @Patch(':id')
   @RequirePermissions('permissions.update')
-  update(@Param('id') id: string, @Body() updatePermissionDto: UpdatePermissionDto) {
-    return this.permissionsService.update(id, updatePermissionDto);
+  update(@Param('id') id: string, @Body() updatePermissionDto: UpdatePermissionDto, @Req() request: Request) {
+    return this.permissionsService.update(id, updatePermissionDto, (request.user as { userId?: string } | undefined)?.userId);
   }
 
   @Delete(':id')

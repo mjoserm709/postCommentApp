@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Role, RoleDocument } from './schemas/role.schema';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
@@ -17,7 +17,7 @@ export class RolesService {
     return this.roleModel.find({ key: { $in: keys }, isActive: true }).exec();
   }
 
-  async create(createRoleDto: CreateRoleDto) {
+  async create(createRoleDto: CreateRoleDto, actorId?: string) {
     const key = createRoleDto.key.trim().toUpperCase();
     const existingRole = await this.roleModel.findOne({ key }).exec();
 
@@ -31,10 +31,11 @@ export class RolesService {
       permissions: createRoleDto.permissions ?? [],
       isSystem: false,
       isActive: createRoleDto.isActive ?? true,
+      createdBy: actorId ? new Types.ObjectId(actorId) : undefined,
     });
   }
 
-  async update(id: string, updateRoleDto: UpdateRoleDto) {
+  async update(id: string, updateRoleDto: UpdateRoleDto, actorId?: string) {
     const existingRole = await this.roleModel.findById(id).exec();
 
     if (!existingRole) {
@@ -57,6 +58,7 @@ export class RolesService {
         ...updateRoleDto,
         key: updateRoleDto.key?.trim().toUpperCase() ?? undefined,
         permissions: updateRoleDto.permissions ?? [],
+        updatedBy: actorId ? new Types.ObjectId(actorId) : undefined,
       },
       { new: true },
     ).exec();

@@ -47,13 +47,13 @@ describe('PostsController', () => {
   describe('findAll', () => {
     it('should call postsService.findAll with parsed numbers', () => {
       mockPostsService.findAll.mockReturnValue('result');
-      const result = controller.findAll('2', '20');
+      const result = controller.findAll({ page: 2, limit: 20 });
       expect(mockPostsService.findAll).toHaveBeenCalledWith(2, 20);
       expect(result).toBe('result');
     });
 
     it('should use default values if page and limit are missing', () => {
-      controller.findAll();
+      controller.findAll({});
       expect(mockPostsService.findAll).toHaveBeenCalledWith(1, 12);
     });
   });

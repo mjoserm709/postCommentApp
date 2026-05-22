@@ -10,12 +10,16 @@ import mongoose from 'mongoose';
 import { ApiResponse } from '../responses/api-response';
 import { HttpStatusMessages } from '../utils/http-status-messages.util';
 
+type RequestWithContext = Request & {
+  requestId?: string;
+};
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const request = ctx.getRequest<RequestWithContext>();
 
     const { status, message, errorCode, details } = this.normalizeException(exception);
 
@@ -25,6 +29,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         details: {
           path: request.url,
           method: request.method,
+          requestId: request.requestId,
           timestamp: new Date().toISOString(),
           ...details,
         },
@@ -78,12 +83,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       };
     }
 
-    if (exception && typeof exception === 'object' && 'code' in exception && (exception as any).code === 11000) {
+    if (this.isMongoDuplicateKeyError(exception)) {
       return {
         status: HttpStatus.CONFLICT,
         message: 'Duplicate key error',
         errorCode: 'MONGO_DUPLICATE_KEY',
-        details: (exception as any).keyValue,
+        details: exception.keyValue,
       };
     }
 
@@ -102,5 +107,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       errorCode: 'INTERNAL_SERVER_ERROR',
       details: undefined,
     };
+  }
+
+  private isMongoDuplicateKeyError(
+    exception: unknown,
+  ): exception is { code: number; keyValue?: Record<string, unknown> } {
+    return Boolean(
+      exception &&
+        typeof exception === 'object' &&
+        'code' in exception &&
+        (exception as { code?: unknown }).code === 11000,
+    );
   }
 }

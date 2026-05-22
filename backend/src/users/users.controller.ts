@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -16,8 +17,8 @@ export class UsersController {
   @Post()
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('users.create')
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  create(@Body() createUserDto: CreateUserDto, @Req() request: Request) {
+    return this.usersService.create(createUserDto, (request.user as { userId?: string } | undefined)?.userId);
   }
 
   @Post(':id/change-password')
@@ -46,14 +47,14 @@ export class UsersController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('users.update')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Req() request: Request) {
+    return this.usersService.update(id, updateUserDto, (request.user as { userId?: string } | undefined)?.userId);
   }
 
   @Patch(':id/deactivate')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('users.deactivate')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  remove(@Param('id') id: string, @Req() request: Request) {
+    return this.usersService.remove(id, (request.user as { userId?: string } | undefined)?.userId);
   }
 }

@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Permission, PermissionDocument } from './schemas/permission.schema';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
@@ -19,7 +19,7 @@ export class PermissionsService {
     return this.permissionModel.find({ isActive: true }).sort({ module: 1, key: 1 }).exec();
   }
 
-  async create(createPermissionDto: CreatePermissionDto) {
+  async create(createPermissionDto: CreatePermissionDto, actorId?: string) {
     const existingPermission = await this.permissionModel
       .findOne({ key: createPermissionDto.key })
       .exec();
@@ -33,10 +33,11 @@ export class PermissionsService {
       key: createPermissionDto.key.trim(),
       module: createPermissionDto.module.trim(),
       isActive: createPermissionDto.isActive ?? true,
+      createdBy: actorId ? new Types.ObjectId(actorId) : undefined,
     });
   }
 
-  async update(id: string, updatePermissionDto: UpdatePermissionDto) {
+  async update(id: string, updatePermissionDto: UpdatePermissionDto, actorId?: string) {
     const existingPermission = await this.permissionModel.findById(id).exec();
 
     if (!existingPermission) {
@@ -60,6 +61,7 @@ export class PermissionsService {
         ...updatePermissionDto,
         key: updatePermissionDto.key?.trim() ?? undefined,
         module: updatePermissionDto.module?.trim() ?? undefined,
+        updatedBy: actorId ? new Types.ObjectId(actorId) : undefined,
       },
       { new: true },
     ).exec();

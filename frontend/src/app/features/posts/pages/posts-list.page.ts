@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import Swal from 'sweetalert2';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -82,12 +83,12 @@ export class PostsListPage implements OnInit {
 ]`, [Validators.required, Validators.minLength(10)]] });
   filteredPosts = computed(() => { const term = this.search().trim().toLowerCase(); const posts = this.posts(); return !term ? posts : posts.filter((post) => `${post.title} ${post.excerpt} ${post.tags.join(' ')}`.toLowerCase().includes(term)); });
   ngOnInit() { this.loadPosts(); this.loadCategories(); }
-  loadPosts() { this.isLoading.set(true); this.postsService.getPosts(this.page(), this.limit).pipe(finalize(() => this.isLoading.set(false))).subscribe({ next: (response) => { this.posts.set(response.data.items); this.totalPages.set(response.data.totalPages); } }); }
-  loadCategories() { this.categoriesService.getCategories(1, 50).subscribe({ next: (response) => this.categories.set(response.data.items) }); }
+  loadPosts() { this.isLoading.set(true); this.postsService.getPosts(this.page(), this.limit).pipe(finalize(() => this.isLoading.set(false))).subscribe({ next: (response) => { const data = response.data; this.posts.set(Array.isArray(data) ? data : (data.items || [])); this.totalPages.set(Array.isArray(data) ? 1 : (data.totalPages || 1)); } }); }
+  loadCategories() { this.categoriesService.getCategories(1, 50).subscribe({ next: (response) => { const data = response.data; this.categories.set(Array.isArray(data) ? data : (data.items || [])); } }); }
   changePage(nextPage: number) { this.page.set(nextPage); this.loadPosts(); }
   createPost(payload: CreatePostPayload) { this.isSaving.set(true); this.postsService.createPost(payload).pipe(finalize(() => this.isSaving.set(false))).subscribe({ next: () => { this.isCreateModalOpen.set(false); this.toast.success('Post creado correctamente.'); this.loadPosts(); } }); }
   importBulk() { if (this.bulkForm.invalid) { this.bulkForm.markAllAsTouched(); return; } let posts: CreatePostPayload[]; const raw = this.bulkForm.getRawValue(); try { posts = JSON.parse(raw.postsJson); } catch { this.toast.error('El JSON no es valido.'); return; } if (!Array.isArray(posts) || posts.length === 0) { this.toast.error('El JSON debe contener un arreglo con al menos un post.'); return; } this.isImporting.set(true); this.postsService.createBulk({ importId: raw.importId.trim() || undefined, posts }).pipe(finalize(() => this.isImporting.set(false))).subscribe({ next: (response) => { this.toast.success(`${response.data.count} posts importados correctamente.`); this.loadPosts(); } }); }
-  deletePost(post: Post) { const confirmed = window.confirm(`Vas a eliminar "${post.title}". Esta accion no se puede deshacer.`); if (!confirmed || this.deletingPostIds().includes(post._id)) return; this.deletingPostIds.update((current) => [...current, post._id]); this.postsService.deletePost(post._id).subscribe({ next: () => { this.toast.success('Post eliminado.'); this.loadPosts(); }, error: () => this.deletingPostIds.update((current) => current.filter((id) => id !== post._id)), complete: () => this.deletingPostIds.update((current) => current.filter((id) => id !== post._id)) }); }
+  async deletePost(post: Post) { const result = await Swal.fire({ title: '¿Estas seguro?', text: `Vas a eliminar "${post.title}". Esta accion no se puede deshacer.`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Si, eliminar', cancelButtonText: 'Cancelar' }); if (!result.isConfirmed || this.deletingPostIds().includes(post._id)) return; this.deletingPostIds.update((current) => [...current, post._id]); this.postsService.deletePost(post._id).subscribe({ next: () => { this.toast.success('Post eliminado.'); this.loadPosts(); }, error: () => this.deletingPostIds.update((current) => current.filter((id) => id !== post._id)), complete: () => this.deletingPostIds.update((current) => current.filter((id) => id !== post._id)) }); }
   openComments(post: Post) { void this.router.navigate(['/categories', post.categorySlug], { queryParams: { postId: post._id } }); }
   closeCreateModal() { if (!this.isSaving()) this.isCreateModalOpen.set(false); }
 }

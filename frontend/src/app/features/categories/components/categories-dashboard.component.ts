@@ -85,8 +85,14 @@ export class CategoriesDashboardComponent implements OnInit {
     this.isLoading.set(true);
     this.categoriesService.getCategories(this.page(), this.limit).subscribe({
       next: (response) => {
-        this.categories.set(response.data.items);
-        this.totalPages.set(response.data.totalPages);
+        const data = response.data;
+        if (Array.isArray(data)) {
+          this.categories.set(data);
+          this.totalPages.set(1);
+        } else {
+          this.categories.set(data.items || []);
+          this.totalPages.set(data.totalPages || 1);
+        }
         this.isLoading.set(false);
       },
       error: () => {

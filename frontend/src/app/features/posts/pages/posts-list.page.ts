@@ -11,6 +11,7 @@ import { PostFormComponent } from '../components/post-form.component';
 import { SearchBarComponent } from '../components/search-bar.component';
 import { Post, CreatePostPayload } from '../data/post.interfaces';
 import { PostsService } from '../services/posts.service';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-posts-list-page',
@@ -27,15 +28,20 @@ import { PostsService } from '../services/posts.service';
         <app-search-bar [value]="search()" (valueChange)="search.set($event)" />
       </section>
 
-      <form class="bulk-panel app-surface-card app-section-stack" [formGroup]="bulkForm" (ngSubmit)="importBulk()">
-        <div><h2>Carga masiva</h2><p>Pega un arreglo JSON de posts.</p></div>
-        <label class="form-label">ID del lote</label>
-        <input class="form-control" formControlName="importId" placeholder="lote-mayo-2026">
-        <label class="form-label mt-3">JSON de posts</label>
-        <textarea class="form-control code-box" rows="10" formControlName="postsJson"></textarea>
-        @if (bulkForm.controls.postsJson.invalid && bulkForm.controls.postsJson.touched) { <small class="app-error-copy">Debes ingresar un JSON con al menos un post.</small> }
-        <button class="btn btn-outline-primary mt-3" type="submit" [disabled]="isImporting() || bulkForm.invalid">{{ isImporting() ? 'Importando...' : 'Importar posts' }}</button>
-      </form>
+      <div class="bulk-panel app-surface-card app-section-stack">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+          <div><h2>Carga masiva por Excel</h2><p>Sube un archivo .xlsx para crear multiples posts.</p></div>
+          <button class="btn btn-outline-secondary btn-sm" type="button" (click)="downloadTemplate()">Descargar plantilla</button>
+        </div>
+        <form [formGroup]="bulkForm" (ngSubmit)="importBulk()">
+          <label class="form-label">ID del lote (Opcional)</label>
+          <input class="form-control mb-3" formControlName="importId" placeholder="ej. lote-mayo-2026">
+          <label class="form-label">Archivo de Excel (.xlsx, .csv)</label>
+          <input class="form-control" type="file" accept=".xlsx, .csv" (change)="onFileChange($event)" #fileInput>
+          @if (excelPosts().length > 0) { <div class="mt-2 text-success"><small>Archivo listo: {{ excelPosts().length }} posts detectados.</small></div> }
+          <button class="btn btn-primary mt-3" type="submit" [disabled]="isImporting() || excelPosts().length === 0">{{ isImporting() ? 'Importando...' : 'Importar posts' }}</button>
+        </form>
+      </div>
 
       @if (isLoading()) {
         <div class="state-card app-state-card">Cargando posts...</div>
@@ -68,26 +74,50 @@ import { PostsService } from '../services/posts.service';
 })
 export class PostsListPage implements OnInit {
   private fb = inject(FormBuilder); private postsService = inject(PostsService); private categoriesService = inject(CategoriesService); private toast = inject(ToastService); private router = inject(Router);
-  posts = signal<Post[]>([]); categories = signal<Category[]>([]); search = signal(''); isLoading = signal(false); isSaving = signal(false); isImporting = signal(false); isCreateModalOpen = signal(false); deletingPostIds = signal<string[]>([]); page = signal(1); totalPages = signal(1); limit = 12;
-  bulkForm = this.fb.nonNullable.group({ importId: [''], postsJson: [`[
-  {
-    "title": "Ejemplo de post",
-    "slug": "ejemplo-de-post",
-    "excerpt": "Resumen corto para mostrar en listados.",
-    "content": "Contenido completo del post con suficiente longitud para validar correctamente.",
-    "categorySlug": "terror",
-    "tags": ["cuento", "suspenso"],
-    "status": "published",
-    "commentsEnabled": true
-  }
-]`, [Validators.required, Validators.minLength(10)]] });
+  posts = signal<Post[]>([]); categories = signal<Category[]>([]); search = signal(''); isLoading = signal(false); isSaving = signal(false); isImporting = signal(false); isCreateModalOpen = signal(false); deletingPostIds = signal<string[]>([]); page = signal(1); totalPages = signal(1); limit = 12; excelPosts = signal<any[]>([]);
+  bulkForm = this.fb.nonNullable.group({ importId: [''] });
   filteredPosts = computed(() => { const term = this.search().trim().toLowerCase(); const posts = this.posts(); return !term ? posts : posts.filter((post) => `${post.title} ${post.excerpt} ${post.tags.join(' ')}`.toLowerCase().includes(term)); });
   ngOnInit() { this.loadPosts(); this.loadCategories(); }
   loadPosts() { this.isLoading.set(true); this.postsService.getPosts(this.page(), this.limit).pipe(finalize(() => this.isLoading.set(false))).subscribe({ next: (response) => { const data = response.data; this.posts.set(Array.isArray(data) ? data : (data.items || [])); this.totalPages.set(Array.isArray(data) ? 1 : (data.totalPages || 1)); } }); }
   loadCategories() { this.categoriesService.getCategories(1, 50).subscribe({ next: (response) => { const data = response.data; this.categories.set(Array.isArray(data) ? data : (data.items || [])); } }); }
   changePage(nextPage: number) { this.page.set(nextPage); this.loadPosts(); }
   createPost(payload: CreatePostPayload) { this.isSaving.set(true); this.postsService.createPost(payload).pipe(finalize(() => this.isSaving.set(false))).subscribe({ next: () => { this.isCreateModalOpen.set(false); this.toast.success('Post creado correctamente.'); this.loadPosts(); } }); }
-  importBulk() { if (this.bulkForm.invalid) { this.bulkForm.markAllAsTouched(); return; } let posts: CreatePostPayload[]; const raw = this.bulkForm.getRawValue(); try { posts = JSON.parse(raw.postsJson); } catch { this.toast.error('El JSON no es valido.'); return; } if (!Array.isArray(posts) || posts.length === 0) { this.toast.error('El JSON debe contener un arreglo con al menos un post.'); return; } this.isImporting.set(true); this.postsService.createBulk({ importId: raw.importId.trim() || undefined, posts }).pipe(finalize(() => this.isImporting.set(false))).subscribe({ next: (response) => { this.toast.success(`${response.data.count} posts importados correctamente.`); this.loadPosts(); } }); }
+  
+  downloadTemplate() {
+    const ws = XLSX.utils.json_to_sheet([{ title: 'Ejemplo de post', slug: 'ejemplo-de-post', excerpt: 'Resumen corto...', content: 'Contenido completo del post...', categorySlug: 'terror', coverImageUrl: 'https://ejemplo.com/imagen.jpg', tags: 'cuento, suspenso', status: 'published', commentsEnabled: true }]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Posts');
+    XLSX.writeFile(wb, 'plantilla-posts.xlsx');
+  }
+
+  onFileChange(event: any) {
+    const target = event.target as HTMLInputElement;
+    if (target.files?.length !== 1) return;
+    const file = target.files[0];
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        const bstr = e.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        let data = XLSX.utils.sheet_to_json<any>(ws);
+        data = data.map(row => ({
+          ...row,
+          tags: row.tags ? String(row.tags).split(',').map(t => t.trim()).filter(Boolean) : [],
+          commentsEnabled: row.commentsEnabled === undefined || row.commentsEnabled === 'true' || row.commentsEnabled === true,
+        }));
+        this.excelPosts.set(data);
+        this.toast.success(`Archivo leido con ${data.length} filas.`);
+      } catch (error) {
+        this.toast.error('Error al leer el archivo Excel.');
+        this.excelPosts.set([]);
+      }
+    };
+    reader.readAsBinaryString(file);
+  }
+
+  importBulk() { const posts = this.excelPosts(); if (posts.length === 0) { this.toast.error('Debes seleccionar un archivo valido primero.'); return; } this.isImporting.set(true); const importId = this.bulkForm.value.importId?.trim() || undefined; this.postsService.createBulk({ importId, posts }).pipe(finalize(() => this.isImporting.set(false))).subscribe({ next: (response) => { this.toast.success(`${response.data.count} posts importados correctamente.`); this.loadPosts(); this.excelPosts.set([]); this.bulkForm.reset(); } }); }
   async deletePost(post: Post) { const result = await Swal.fire({ title: '¿Estas seguro?', text: `Vas a eliminar "${post.title}". Esta accion no se puede deshacer.`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Si, eliminar', cancelButtonText: 'Cancelar' }); if (!result.isConfirmed || this.deletingPostIds().includes(post._id)) return; this.deletingPostIds.update((current) => [...current, post._id]); this.postsService.deletePost(post._id).subscribe({ next: () => { this.toast.success('Post eliminado.'); this.loadPosts(); }, error: () => this.deletingPostIds.update((current) => current.filter((id) => id !== post._id)), complete: () => this.deletingPostIds.update((current) => current.filter((id) => id !== post._id)) }); }
   openComments(post: Post) { void this.router.navigate(['/categories', post.categorySlug], { queryParams: { postId: post._id } }); }
   closeCreateModal() { if (!this.isSaving()) this.isCreateModalOpen.set(false); }

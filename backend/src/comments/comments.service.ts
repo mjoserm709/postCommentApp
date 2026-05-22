@@ -14,13 +14,15 @@ export class CommentsService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
-  async findByPost(postId: string) {
+  async findByPost(postId: string, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
     const normalizedPostId = new Types.ObjectId(postId);
-    const comments = await this.commentModel
-      .find({ postId: normalizedPostId, isActive: true })
-      .sort({ createdAt: -1 })
-      .lean()
-      .exec();
+    const query = { postId: normalizedPostId, isActive: true };
+
+    const [comments, totalCount] = await Promise.all([
+      this.commentModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean().exec(),
+      this.commentModel.countDocuments(query).exec()
+    ]);
 
     const authorIds = comments.map((comment) => comment.authorId);
     const authors = await this.userModel
@@ -30,7 +32,10 @@ export class CommentsService {
       .exec();
     const authorMap = new Map(authors.map((author) => [author._id.toString(), author]));
 
-    return comments.map((comment) => this.serializeComment(comment, authorMap.get(comment.authorId.toString())));
+    const items = comments.map((comment) => this.serializeComment(comment, authorMap.get(comment.authorId.toString())));
+    const totalPages = Math.ceil(totalCount / limit) || 1;
+    
+    return { items, totalPages };
   }
 
   async create(postId: string, createCommentDto: CreateCommentDto, authorId: string) {

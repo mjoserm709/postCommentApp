@@ -9,11 +9,15 @@ export class CategoriesService {
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
   ) {}
 
-  findAll() {
-    return this.categoryModel
-      .find({ isActive: true })
-      .sort({ name: 1 })
-      .exec();
+  async findAll(page: number = 1, limit: number = 12) {
+    const skip = (page - 1) * limit;
+    const query = { isActive: true };
+    const [items, totalCount] = await Promise.all([
+      this.categoryModel.find(query).sort({ name: 1 }).skip(skip).limit(limit).exec(),
+      this.categoryModel.countDocuments(query).exec()
+    ]);
+    const totalPages = Math.ceil(totalCount / limit) || 1;
+    return { items, totalPages };
   }
 
   findOne(slug: string) {

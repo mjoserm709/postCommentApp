@@ -13,7 +13,9 @@ export class CommentsController {
 
   @Get()
   findByPost(@Query() query: QueryCommentsDto) {
-    return this.commentsService.findByPost(query.postId);
+    const pageNum = query.page ? parseInt(query.page, 10) : 1;
+    const limitNum = query.limit ? parseInt(query.limit, 10) : 10;
+    return this.commentsService.findByPost(query.postId, pageNum, limitNum);
   }
 
   @Post()
@@ -36,8 +38,14 @@ export class NestedCommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
   @Get()
-  findNestedByPost(@Param('postId') postId: string) {
-    return this.commentsService.findByPost(postId);
+  findNestedByPost(
+    @Param('postId') postId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return this.commentsService.findByPost(postId, pageNum, limitNum);
   }
 
   @Post()

@@ -10,15 +10,26 @@ import { Post, PostDocument, PostStatus } from './schemas/post.schema';
 export class PostsService {
   constructor(@InjectModel(Post.name) private postModel: Model<PostDocument>) {}
 
-  findAll() {
-    return this.postModel.find({ isActive: true }).sort({ createdAt: -1 }).exec();
+  async findAll(page: number = 1, limit: number = 12) {
+    const skip = (page - 1) * limit;
+    const query = { isActive: true };
+    const [items, totalCount] = await Promise.all([
+      this.postModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.postModel.countDocuments(query).exec()
+    ]);
+    const totalPages = Math.ceil(totalCount / limit) || 1;
+    return { items, totalPages };
   }
 
-  findPublishedByCategory(categorySlug: string) {
-    return this.postModel
-      .find({ categorySlug, status: PostStatus.Published, isActive: true })
-      .sort({ publishedAt: -1, createdAt: -1 })
-      .exec();
+  async findPublishedByCategory(categorySlug: string, page: number = 1, limit: number = 12) {
+    const skip = (page - 1) * limit;
+    const query = { categorySlug, status: PostStatus.Published, isActive: true };
+    const [items, totalCount] = await Promise.all([
+      this.postModel.find(query).sort({ publishedAt: -1, createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.postModel.countDocuments(query).exec()
+    ]);
+    const totalPages = Math.ceil(totalCount / limit) || 1;
+    return { items, totalPages };
   }
 
   async findOne(id: string) {

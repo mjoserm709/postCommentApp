@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -16,13 +16,21 @@ export class PostsController {
   @Get()
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('posts.read')
-  findAll() {
-    return this.postsService.findAll();
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 12;
+    return this.postsService.findAll(pageNum, limitNum);
   }
 
   @Get('category/:categorySlug')
-  findPublishedByCategory(@Param('categorySlug') categorySlug: string) {
-    return this.postsService.findPublishedByCategory(categorySlug);
+  findPublishedByCategory(
+    @Param('categorySlug') categorySlug: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 12;
+    return this.postsService.findPublishedByCategory(categorySlug, pageNum, limitNum);
   }
 
   @Get(':id')

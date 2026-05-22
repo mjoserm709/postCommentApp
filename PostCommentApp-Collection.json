@@ -1,0 +1,377 @@
+{
+  "info": {
+    "name": "PostCommentApp API - Full",
+    "description": "Colección completa con todos los endpoints y pruebas de la API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "testUserId", "value": "", "type": "string" },
+    { "key": "testPostId", "value": "", "type": "string" },
+    { "key": "testCommentId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"password123\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+                  "var jsonData = pm.response.json();",
+                  "if(jsonData.data && jsonData.data.accessToken) { pm.collectionVariables.set(\"token\", jsonData.data.accessToken); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/profile", "host": ["{{baseUrl}}"], "path": ["auth", "profile"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) { pm.collectionVariables.set(\"testUserId\", jsonData.data[0]._id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data._id) { pm.collectionVariables.set(\"testUserId\", jsonData.data._id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"nuevo_usuario\",\n    \"password\": \"secreto\",\n    \"firstName\": \"Nuevo\",\n    \"lastName\": \"Usuario\",\n    \"roleId\": \"user\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users/{{testUserId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{testUserId}}"] }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firstName\": \"Nombre Actualizado\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users/{{testUserId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{testUserId}}"] }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users/{{testUserId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{testUserId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Categories",
+      "item": [
+        {
+          "name": "Get Categories (Paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Category by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/categories/fantasia", "host": ["{{baseUrl}}"], "path": ["categories", "fantasia"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Posts",
+      "item": [
+        {
+          "name": "Create Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data._id) { pm.collectionVariables.set(\"testPostId\", jsonData.data._id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Post creado desde Postman\",\n    \"slug\": \"post-postman\",\n    \"excerpt\": \"Resumen postman\",\n    \"content\": \"Este post fue creado automaticamente para pruebas en postman.\",\n    \"categorySlug\": \"fantasia\",\n    \"tags\": [\"api\", \"test\"],\n    \"status\": \"published\",\n    \"commentsEnabled\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/posts", "host": ["{{baseUrl}}"], "path": ["posts"] }
+          }
+        },
+        {
+          "name": "Get All Posts (Paginado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.items && jsonData.data.items.length > 0) { pm.collectionVariables.set(\"testPostId\", jsonData.data.items[0]._id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/posts?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Post by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/posts/{{testPostId}}", "host": ["{{baseUrl}}"], "path": ["posts", "{{testPostId}}"] }
+          }
+        },
+        {
+          "name": "Get Posts by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/category/fantasia?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "category", "fantasia"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Post",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Post actualizado desde Postman\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/posts/{{testPostId}}", "host": ["{{baseUrl}}"], "path": ["posts", "{{testPostId}}"] }
+          }
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/posts/{{testPostId}}", "host": ["{{baseUrl}}"], "path": ["posts", "{{testPostId}}"] }
+          }
+        },
+        {
+          "name": "Bulk Create Posts",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"importId\": \"postman-bulk\",\n    \"posts\": [\n        {\n            \"title\": \"Post masivo 1\",\n            \"slug\": \"masivo-1\",\n            \"excerpt\": \"ex\",\n            \"content\": \"content\",\n            \"categorySlug\": \"tecnologia\"\n        }\n    ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/posts/bulk", "host": ["{{baseUrl}}"], "path": ["posts", "bulk"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Comments",
+      "item": [
+        {
+          "name": "Create Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data._id) { pm.collectionVariables.set(\"testCommentId\", jsonData.data._id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"postId\": \"{{testPostId}}\",\n    \"content\": \"Comentario de prueba creado por Postman\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/comments", "host": ["{{baseUrl}}"], "path": ["comments"] }
+          }
+        },
+        {
+          "name": "Get Comments by Query (postId)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/comments?postId={{testPostId}}&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["comments"],
+              "query": [
+                { "key": "postId", "value": "{{testPostId}}" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Comments by Nested Route",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{testPostId}}/comments?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{testPostId}}", "comments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/comments/{{testCommentId}}", "host": ["{{baseUrl}}"], "path": ["comments", "{{testCommentId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}
